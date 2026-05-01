@@ -4,12 +4,12 @@ window.SG_ENERGY_MAP_CONFIG = {
   preferVectorTiles: true,
   mapboxTilesets: {
     buildings: {
-      url: "mapbox://jpyjpy.393mmqh4",
-      sourceLayer: "01_buildings_sg"
+      url: "mapbox://jpyjpy.6z743ge0",
+      sourceLayer: "01_buildings_sg-9gu4oe"
     },
     grid: {
-      url: "mapbox://jpyjpy.6z743ge0",
-      sourceLayer: "02_grid_500m"
+      url: "mapbox://jpyjpy.393mmqh4",
+      sourceLayer: "02_grid_500m-5y15qw"
     }
   }
 };
