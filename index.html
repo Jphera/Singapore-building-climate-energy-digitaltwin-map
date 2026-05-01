@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Singapore Building Climate-Energy Map</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <main id="app">
+      <div id="map"></div>
+
+      <section class="panel panel-left" aria-label="Map controls">
+        <div class="brand">
+          <p class="eyebrow">Singapore building energy atlas</p>
+          <h1>Climate-energy feedback sensitivity</h1>
+          <p class="subtitle">Building-level energy demand and 500 m seasonal sensitivity results.</p>
+        </div>
+
+        <div class="control-block">
+          <label class="control-label" for="layerMode">View</label>
+          <select id="layerMode">
+            <option value="combined">Buildings + 500 m grid</option>
+            <option value="buildings">Buildings only</option>
+            <option value="grid">500 m grid only</option>
+          </select>
+        </div>
+
+        <div class="control-block">
+          <span class="control-label">Metric</span>
+          <div id="metricButtons" class="segmented"></div>
+        </div>
+
+        <div class="control-block">
+          <label class="control-label" for="searchInput">Find building or grid</label>
+          <div class="search-row">
+            <input id="searchInput" type="search" placeholder="objectid, source id, or grid id" autocomplete="off" />
+            <button id="searchButton" type="button">Search</button>
+          </div>
+        </div>
+
+        <div class="control-grid">
+          <label>
+            <span class="control-label">3D height</span>
+            <input id="heightScale" type="range" min="0" max="2.5" value="1" step="0.1" />
+          </label>
+          <label>
+            <span class="control-label">Grid opacity</span>
+            <input id="gridOpacity" type="range" min="0" max="0.9" value="0.48" step="0.03" />
+          </label>
+        </div>
+
+        <div class="summary-strip">
+          <div>
+            <strong id="buildingCount">--</strong>
+            <span>buildings</span>
+          </div>
+          <div>
+            <strong id="gridCount">--</strong>
+            <span>grid cells</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-right" aria-label="Legend and selected feature">
+        <div class="legend">
+          <div class="legend-head">
+            <div>
+              <p class="eyebrow">Current metric</p>
+              <h2 id="legendTitle">--</h2>
+            </div>
+            <button id="resetView" type="button">Reset</button>
+          </div>
+          <div id="legendRamp" class="legend-ramp"></div>
+          <div id="legendTicks" class="legend-ticks"></div>
+        </div>
+
+        <div class="feature-card">
+          <p class="eyebrow">Selected feature</p>
+          <h2 id="featureTitle">Click a building or grid cell</h2>
+          <div id="featureDetails" class="detail-list">
+            <p>Use hover for quick values and click to pin detailed attributes.</p>
+          </div>
+        </div>
+
+        <div class="notes">
+          <p>Data source: ArcGIS Pro FileGDB results for Singapore building energy and seasonal 500 m grids.</p>
+        </div>
+      </section>
+
+      <section id="tokenDialog" class="token-dialog" aria-label="Mapbox token setup">
+        <div class="token-card">
+          <p class="eyebrow">Mapbox token required</p>
+          <h2>Paste a public access token to start the map</h2>
+          <p>The token is stored only in this browser's local storage. You can also edit `src/config.js`.</p>
+          <input id="tokenInput" type="password" placeholder="pk.eyJ..." autocomplete="off" />
+          <div class="token-actions">
+            <button id="tokenSave" type="button">Start map</button>
+            <button id="tokenClear" type="button">Clear saved token</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="loading" class="loading">Loading geospatial data...</div>
+    </main>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
+    <script src="src/config.js?v=20260501-search"></script>
+    <script src="src/app.js?v=20260501-search"></script>
+  </body>
+</html>
