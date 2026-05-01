@@ -5,11 +5,11 @@ window.SG_ENERGY_MAP_CONFIG = {
   mapboxTilesets: {
     buildings: {
       url: "mapbox://jpyjpy.6z743ge0",
-      sourceLayer: "01_buildings_sg-9gu4oe"
+      sourceLayer: "01_buildings_sg"
     },
     grid: {
       url: "mapbox://jpyjpy.393mmqh4",
-      sourceLayer: "02_grid_500m-5y15qw"
+      sourceLayer: "02_grid_500m"
     }
   }
 };
