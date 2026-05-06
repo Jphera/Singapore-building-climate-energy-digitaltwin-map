@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Singapore Building Climate-Energy Map</title>
+    <title>Urban Digital Twin for Microclimate-Energy Analysis</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css" rel="stylesheet" />
     <link rel="stylesheet" href="src/styles.css" />
   </head>
@@ -13,23 +13,46 @@
 
       <section class="panel panel-left" aria-label="Map controls">
         <div class="brand">
-          <p class="eyebrow">Singapore building energy atlas</p>
-          <h1>Climate-energy feedback sensitivity</h1>
-          <p class="subtitle">Building-level energy demand and 500 m seasonal sensitivity results.</p>
+          <p class="eyebrow">Singapore urban digital twin</p>
+          <h1>Microclimate-informed Urban Energy Model / Digital Twin</h1>
         </div>
 
         <div class="control-block">
-          <label class="control-label" for="layerMode">View</label>
+          <label class="control-label" for="layerMode">Viewing</label>
           <select id="layerMode">
-            <option value="combined">Buildings + 500 m grid</option>
-            <option value="buildings">Buildings only</option>
-            <option value="grid">500 m grid only</option>
+            <option value="buildings">Individual building</option>
+            <option value="grid">District level (500 m grid)</option>
+            <option value="combined" selected>Individual building + District</option>
           </select>
         </div>
 
         <div class="control-block">
-          <span class="control-label">Metric</span>
-          <div id="metricButtons" class="segmented"></div>
+          <span class="control-label">Project summary</span>
+          <p class="summary-text">
+            This digital twin integrates building-level energy modeling, urban morphology, measured electricity-use
+            intensity, and WRF-derived microclimate fields to visualize how Singapore's built environment responds to
+            relative hot, cold, and transition climate conditions at both building and 500 m district scales.
+          </p>
+        </div>
+
+        <div class="control-block metric-block">
+          <span class="control-label">Building metadata</span>
+          <div id="buildingMetricButtons" class="segmented compact"></div>
+        </div>
+
+        <div class="control-block metric-block">
+          <span class="control-label">Weather (WRF results)</span>
+          <div id="weatherButtons" class="segmented compact"></div>
+        </div>
+
+        <div class="control-block">
+          <span class="control-label">Weather period</span>
+          <div id="periodButtons" class="segmented compact three"></div>
+        </div>
+
+        <div class="control-block metric-block">
+          <span class="control-label">Energy Use</span>
+          <div id="energyButtons" class="button-stack"></div>
         </div>
 
         <div class="control-block">
@@ -74,6 +97,7 @@
           </div>
           <div id="legendRamp" class="legend-ramp"></div>
           <div id="legendTicks" class="legend-ticks"></div>
+          <div id="typeLegend" class="type-legend hidden"></div>
         </div>
 
         <div class="feature-card">
@@ -85,7 +109,7 @@
         </div>
 
         <div class="notes">
-          <p>Data source: ArcGIS Pro FileGDB results for Singapore building energy and seasonal 500 m grids.</p>
+          <p>Data source: ArcGIS Pro FileGDB building-energy outputs and WRF microclimate simulations for Singapore.</p>
         </div>
       </section>
 
@@ -93,8 +117,8 @@
         <div class="token-card">
           <p class="eyebrow">Mapbox token required</p>
           <h2>Paste a public access token to start the map</h2>
-          <p>The token is stored only in this browser's local storage. You can also edit `src/config.js`.</p>
-          <input id="tokenInput" type="password" placeholder="pk.eyJ..." autocomplete="off" />
+          <p>The token is stored only in this browser's local storage. For public deployment, use a URL-restricted Mapbox public token.</p>
+          <input id="tokenInput" type="password" placeholder="Mapbox public access token" autocomplete="off" />
           <div class="token-actions">
             <button id="tokenSave" type="button">Start map</button>
             <button id="tokenClear" type="button">Clear saved token</button>
@@ -106,7 +130,7 @@
     </main>
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
-    <script src="src/config.js?v=20260501-search"></script>
-    <script src="src/app.js?v=20260501-search"></script>
+    <script src="src/config.js?v=20260506-weather"></script>
+    <script src="src/app.js?v=20260506-weather"></script>
   </body>
 </html>
