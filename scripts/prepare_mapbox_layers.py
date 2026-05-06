@@ -38,10 +38,10 @@ PERIODS = {
 }
 
 WEATHER_FIELDS = {
-    "temp": {"unit": "degC", "label": "2 m temperature", "suffix": "c", "convert": "kelvin_to_c"},
-    "wind": {"unit": "m/s", "label": "10 m wind speed", "suffix": "ms", "convert": None},
-    "rh": {"unit": "%", "label": "Relative humidity", "suffix": "pct", "convert": None},
-    "solar": {"unit": "W/m2", "label": "Solar shortwave radiation", "suffix": "wm2", "convert": None},
+    "temp": {"unit": "degC", "label": "2 m temperature", "suffix": "c", "convert": "kelvin_to_c", "digits": 2},
+    "wind": {"unit": "m/s", "label": "10 m wind speed", "suffix": "ms", "convert": None, "digits": 2},
+    "rh": {"unit": "%", "label": "Relative humidity", "suffix": "pct", "convert": None, "digits": 1},
+    "solar": {"unit": "W/m2", "label": "Solar shortwave radiation", "suffix": "wm2", "convert": None, "digits": 1},
 }
 
 BUILDING_TYPE_GROUPS = {
@@ -193,6 +193,29 @@ def read_weather_csv(path, conversion):
     return records
 
 
+def read_weather_timeseries_csv(path, conversion, digits):
+    grid_rows = {}
+    with path.open("r", encoding="utf-8-sig", newline="") as file:
+        reader = csv.reader(file)
+        header = next(reader)
+        times = header[2:]
+        for row in reader:
+            if len(row) <= 2:
+                continue
+            grid_id = parse_number(row[1]) or parse_number(row[0])
+            if grid_id is None:
+                continue
+            values = []
+            for raw in row[2 : len(header)]:
+                numeric = parse_number(raw)
+                if numeric is None:
+                    values.append(None)
+                else:
+                    values.append(round(convert_value(numeric, conversion), digits))
+            grid_rows[int(grid_id)] = values
+    return times, grid_rows
+
+
 def load_json(path):
     with path.open("r", encoding="utf-8") as file:
         return json.load(file)
@@ -240,6 +263,76 @@ def build_weather_features(grid_geojson, wrf_root):
         props.update(weather.get(grid_id, {}))
         features.append(clone_feature_with_props(feature, props))
     return features
+
+
+def compact_timeseries(times, grid_rows, variable_def, period, variable):
+    grid_ids = sorted(grid_rows)
+    time_count = len(times)
+    values_by_time = []
+    all_values = []
+    for time_index in range(time_count):
+        row = []
+        for grid_id in grid_ids:
+            values = grid_rows[grid_id]
+            value = values[time_index] if time_index < len(values) else None
+            row.append(value)
+            if value is not None:
+                all_values.append(value)
+        values_by_time.append(row)
+    all_values.sort()
+    stats = {
+        "min": round(all_values[0], variable_def["digits"]) if all_values else None,
+        "max": round(all_values[-1], variable_def["digits"]) if all_values else None,
+        "mean": round(sum(all_values) / len(all_values), variable_def["digits"]) if all_values else None,
+        "stops": [
+            round(percentile(all_values, q), variable_def["digits"]) for q in [0.05, 0.25, 0.5, 0.75, 0.95]
+        ]
+        if all_values
+        else [],
+    }
+    return {
+        "period": period,
+        "periodLabel": PERIODS[period]["label"],
+        "variable": variable,
+        "label": variable_def["label"],
+        "unit": variable_def["unit"],
+        "times": times,
+        "gridIds": grid_ids,
+        "values": values_by_time,
+        "stats": stats,
+    }
+
+
+def write_weather_timeseries(wrf_root, out_dir):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "periods": {key: value["label"] for key, value in PERIODS.items()},
+        "variables": {
+            key: {"label": value["label"], "unit": value["unit"]} for key, value in WEATHER_FIELDS.items()
+        },
+        "files": {},
+    }
+    period_dirs = {
+        "hot": wrf_root / "Singapore-summer",
+        "transition": wrf_root / "Singapore-autumn",
+        "cold": wrf_root / "Singapore-winter",
+    }
+    for period, period_def in PERIODS.items():
+        manifest["files"][period] = {}
+        period_dir = period_dirs[period]
+        for variable, filename in period_def["files"].items():
+            variable_def = WEATHER_FIELDS[variable]
+            times, grid_rows = read_weather_timeseries_csv(
+                period_dir / filename, variable_def["convert"], variable_def["digits"]
+            )
+            payload = compact_timeseries(times, grid_rows, variable_def, period, variable)
+            target = out_dir / f"{period}_{variable}.json"
+            with target.open("w", encoding="utf-8") as file:
+                json.dump(payload, file, ensure_ascii=False, separators=(",", ":"))
+            manifest["files"][period][variable] = f"data/weather-timeseries/{target.name}"
+    with (out_dir / "manifest.json").open("w", encoding="utf-8") as file:
+        json.dump(manifest, file, ensure_ascii=False, indent=2)
+    return manifest
 
 
 def build_overview_features(grid_geojson, buildings_geojson):
@@ -364,6 +457,7 @@ def parse_args():
     parser.add_argument("--wrf-root", required=True, type=Path)
     parser.add_argument("--metadata", required=True, type=Path)
     parser.add_argument("--out-dir", default=Path("mapbox-studio-upload"), type=Path)
+    parser.add_argument("--timeseries-out-dir", default=Path("data/weather-timeseries"), type=Path)
     return parser.parse_args()
 
 
@@ -377,6 +471,7 @@ def main():
 
     write_geojson(args.out_dir / "03_weather_500m.geojson", weather_features)
     write_geojson(args.out_dir / "04_building_overview_500m.geojson", overview_features)
+    write_weather_timeseries(args.wrf_root, args.timeseries_out_dir)
     update_metadata(args.metadata, weather_features, overview_features)
 
     print(f"Wrote {len(weather_features):,} weather grid features")

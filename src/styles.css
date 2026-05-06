@@ -163,6 +163,24 @@ select:focus {
   letter-spacing: 0.08em;
 }
 
+.control-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.control-label-row .control-label {
+  margin-bottom: 7px;
+}
+
+.control-label-row output {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  text-align: right;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -203,6 +221,17 @@ select:focus {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
+}
+
+.time-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.time-row button {
+  min-width: 64px;
 }
 
 .control-grid {
