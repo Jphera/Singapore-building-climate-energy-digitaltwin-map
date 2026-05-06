@@ -1,71 +1,189 @@
 const CONFIG = window.SG_ENERGY_MAP_CONFIG || {};
 const TOKEN_STORAGE_KEY = "sg-energy-mapbox-token";
 
+const PERIODS = {
+  hot: { label: "Relative hot (May)", shortLabel: "Hot" },
+  cold: { label: "Relative cold (Dec)", shortLabel: "Cold" },
+  transition: { label: "Transition (Oct)", shortLabel: "Transition" }
+};
+
+const WEATHER_VARIABLES = {
+  temp: { label: "2 m temperature", shortLabel: "Temperature", unit: "degC", suffix: "c" },
+  wind: { label: "10 m wind speed", shortLabel: "Wind", unit: "m/s", suffix: "ms" },
+  rh: { label: "Relative humidity", shortLabel: "RH", unit: "%", suffix: "pct" },
+  solar: { label: "Solar shortwave radiation", shortLabel: "Solar", unit: "W/m2", suffix: "wm2" }
+};
+
 const METRICS = {
-  winter_pct: {
-    label: "Winter sensitivity",
-    shortLabel: "Winter",
-    unit: "%",
-    scale: 100,
-    layer: "both",
-    ramp: ["#2f6f9f", "#46b3b8", "#f4e88b", "#f2a545", "#d94835"]
-  },
-  summer_pct: {
-    label: "Summer sensitivity",
-    shortLabel: "Summer",
-    unit: "%",
-    scale: 100,
-    layer: "both",
-    ramp: ["#2f6f9f", "#46b3b8", "#f4e88b", "#f2a545", "#d94835"]
-  },
-  autumn_pct: {
-    label: "Transition-season sensitivity",
-    shortLabel: "Transition",
-    unit: "%",
-    scale: 100,
-    layer: "both",
-    ramp: ["#2f6f9f", "#46b3b8", "#f4e88b", "#f2a545", "#d94835"]
-  },
-  eui_2023: {
-    label: "EUI 2023",
-    shortLabel: "EUI 2023",
-    unit: "kWh/m2",
-    scale: 1,
-    layer: "buildings",
-    ramp: ["#275d88", "#3ba6a1", "#e6de76", "#e89142", "#bd3f32"]
-  },
-  energy_total_kwh: {
-    label: "Building total energy",
-    shortLabel: "Energy",
-    unit: "kWh",
-    scale: 1,
-    layer: "buildings",
-    ramp: ["#25476e", "#368a9a", "#b7d782", "#f0a747", "#bf4a38"]
+  building_type: {
+    label: "Building type",
+    shortLabel: "Type",
+    category: "building",
+    kind: "categorical",
+    layer: "buildings"
   },
   height_m: {
     label: "Building height",
     shortLabel: "Height",
+    category: "building",
     unit: "m",
-    scale: 1,
     layer: "buildings",
-    ramp: ["#375a7a", "#45a6a1", "#d7d46a", "#e58d46", "#b84039"]
+    fieldByLayer: { buildings: "height_m", building_overview_500m: "mean_height_m" },
+    ramp: ["#d7eef7", "#8fd0df", "#43a6bd", "#23748d", "#123d55"]
+  },
+  weather_temp: {
+    label: WEATHER_VARIABLES.temp.label,
+    shortLabel: WEATHER_VARIABLES.temp.shortLabel,
+    category: "weather",
+    unit: WEATHER_VARIABLES.temp.unit,
+    variable: "temp",
+    ramp: ["#2468a8", "#4fb6c2", "#f3de75", "#f59d3d", "#d94335"]
+  },
+  weather_wind: {
+    label: WEATHER_VARIABLES.wind.label,
+    shortLabel: WEATHER_VARIABLES.wind.shortLabel,
+    category: "weather",
+    unit: WEATHER_VARIABLES.wind.unit,
+    variable: "wind",
+    ramp: ["#eef6ff", "#b9ddf2", "#6fb7d5", "#2c83aa", "#0d4566"]
+  },
+  weather_rh: {
+    label: WEATHER_VARIABLES.rh.label,
+    shortLabel: WEATHER_VARIABLES.rh.shortLabel,
+    category: "weather",
+    unit: WEATHER_VARIABLES.rh.unit,
+    variable: "rh",
+    ramp: ["#f5eee3", "#d8deb6", "#9bc68e", "#4aa477", "#126d67"]
+  },
+  weather_solar: {
+    label: WEATHER_VARIABLES.solar.label,
+    shortLabel: WEATHER_VARIABLES.solar.shortLabel,
+    category: "weather",
+    unit: WEATHER_VARIABLES.solar.unit,
+    variable: "solar",
+    ramp: ["#eef3f7", "#f6de8a", "#f6ae45", "#e66732", "#a8232d"]
+  },
+  energy_cold: {
+    label: "Energy use - Relative cold (Dec)",
+    shortLabel: "Relative cold (Dec)",
+    category: "energy",
+    unit: "kWh",
+    fieldByLayer: { buildings: "energy_total_kwh", grid_500m: "winter_energy_kwh" },
+    ramp: ["#e5f3fb", "#9bcfe5", "#53a8c9", "#287da5", "#12496e"]
+  },
+  energy_hot: {
+    label: "Energy use - Relative hot (May)",
+    shortLabel: "Relative hot (May)",
+    category: "energy",
+    unit: "kWh",
+    fieldByLayer: { buildings: "energy_total_kwh", grid_500m: "summer_energy_kwh" },
+    ramp: ["#fff3c7", "#f8c766", "#ed8f3a", "#d9572e", "#8f241f"]
+  },
+  energy_transition: {
+    label: "Energy use - Transition (Oct)",
+    shortLabel: "Transition (Oct)",
+    category: "energy",
+    unit: "kWh",
+    fieldByLayer: { buildings: "energy_total_kwh", grid_500m: "autumn_energy_kwh" },
+    ramp: ["#eef5dc", "#b7d88a", "#72b56e", "#2f8d66", "#11615a"]
+  },
+  energy_microclimate: {
+    label: "Energy use with microclimate",
+    shortLabel: "With microclimate",
+    category: "energy",
+    unit: "kWh",
+    fieldByLayer: { buildings: "energy_total_kwh", grid_500m: "summer_energy_kwh" },
+    ramp: ["#f2effa", "#c5b6e6", "#9275ca", "#6845a8", "#3d2477"]
+  },
+  eui_2023: {
+    label: "Measured energy use (EUI 2023)",
+    shortLabel: "Measured EUI",
+    category: "energy",
+    unit: "kWh/m2",
+    fieldByLayer: { buildings: "eui_2023", building_overview_500m: "mean_eui_2023" },
+    ramp: ["#f2f5f7", "#bdd7d8", "#74b5b0", "#2c8a82", "#075d59"]
   }
 };
 
+const BUILDING_TYPE_GROUPS = {
+  public_service: {
+    label: "Public service",
+    share: "11.6%",
+    color: "#2563eb",
+    types: ["industrial", "hospital", "clinic", "nursing_home"]
+  },
+  commercial: {
+    label: "Commercial",
+    share: "5.4%",
+    color: "#ea580c",
+    types: ["retail", "mixed_development", "business_park", "shophouse", "hawker_centre"]
+  },
+  education: {
+    label: "Education",
+    share: "2.2%",
+    color: "#7c3aed",
+    types: ["ihl", "non_ihl"]
+  },
+  residential: {
+    label: "Residential",
+    share: "77.4%",
+    color: "#059669",
+    types: ["private_apartment", "hdb", "landed_property", "hotel"]
+  },
+  office_amenity: {
+    label: "Office and amenities",
+    share: "3.4%",
+    color: "#0891b2",
+    types: ["office", "community_cultural", "data_centre", "sports", "restaurant", "supermarket"]
+  }
+};
+
+const TYPE_LABELS = {
+  business_park: "Business park",
+  clinic: "Clinic",
+  community_cultural: "Community cultural",
+  data_centre: "Data center",
+  hawker_centre: "Hawker centre",
+  hdb: "HDB",
+  hospital: "Hospital",
+  hotel: "Hotel",
+  ihl: "Institutes of higher learning",
+  industrial: "Industrial",
+  landed_property: "Landed property",
+  mixed_development: "Mixed development",
+  non_ihl: "Non-institutes of higher learning",
+  nursing_home: "Nursing home",
+  office: "Office",
+  private_apartment: "Private apartment",
+  restaurant: "Restaurant",
+  retail: "Retail",
+  shophouse: "Shophouse",
+  sports: "Sports",
+  supermarket: "Supermarket"
+};
+
 const TYPE_COLORS = {
-  hdb: "#5ad7c7",
-  landed_property: "#9bd76b",
-  private_apartment: "#5da7e8",
-  office: "#f5b84b",
-  retail: "#f36b5d",
-  industrial: "#a57ce8",
-  hotel: "#f08bc4",
-  hospital: "#f07f52",
-  school: "#7cc576",
-  non_ihl: "#7cc576",
-  sports: "#64c6e8",
-  community_cultural: "#d9b45f",
-  hawker_centre: "#d98d5f"
+  industrial: "#2563eb",
+  hospital: "#4f83f1",
+  clinic: "#7ba4f5",
+  nursing_home: "#a6c4fb",
+  retail: "#ea580c",
+  mixed_development: "#f07b2f",
+  business_park: "#f59d55",
+  shophouse: "#f8b879",
+  hawker_centre: "#c94808",
+  ihl: "#7c3aed",
+  non_ihl: "#a78bfa",
+  private_apartment: "#047857",
+  hdb: "#10b981",
+  landed_property: "#65c889",
+  hotel: "#98d8aa",
+  office: "#0891b2",
+  community_cultural: "#2bb4c7",
+  data_centre: "#0e7490",
+  sports: "#67d6e2",
+  restaurant: "#7dd3fc",
+  supermarket: "#bae6fd"
 };
 
 const state = {
@@ -74,15 +192,22 @@ const state = {
   buildings: null,
   grid: null,
   mode: "combined",
-  metric: "summer_pct",
+  metric: "energy_hot",
+  period: "hot",
   heightScale: 1,
-  gridOpacity: 0.48,
+  gridOpacity: 0.54,
   popup: null,
   selectedBuildingId: null,
   selectedGridId: null,
   useVectorTiles: false,
   useHostedTilesets: false,
-  searchIndex: null
+  sourceLayers: {},
+  sourceTypes: {},
+  searchIndex: null,
+  fallbackSources: {
+    weather: false,
+    buildingOverview: false
+  }
 };
 
 const els = {
@@ -92,7 +217,10 @@ const els = {
   tokenClear: document.getElementById("tokenClear"),
   loading: document.getElementById("loading"),
   layerMode: document.getElementById("layerMode"),
-  metricButtons: document.getElementById("metricButtons"),
+  buildingMetricButtons: document.getElementById("buildingMetricButtons"),
+  weatherButtons: document.getElementById("weatherButtons"),
+  energyButtons: document.getElementById("energyButtons"),
+  periodButtons: document.getElementById("periodButtons"),
   searchInput: document.getElementById("searchInput"),
   searchButton: document.getElementById("searchButton"),
   heightScale: document.getElementById("heightScale"),
@@ -102,6 +230,7 @@ const els = {
   legendTitle: document.getElementById("legendTitle"),
   legendRamp: document.getElementById("legendRamp"),
   legendTicks: document.getElementById("legendTicks"),
+  typeLegend: document.getElementById("typeLegend"),
   featureTitle: document.getElementById("featureTitle"),
   featureDetails: document.getElementById("featureDetails"),
   resetView: document.getElementById("resetView")
@@ -137,8 +266,34 @@ function compactCount(value) {
   return Number(value || 0).toLocaleString();
 }
 
-function metricStats(sourceName, metric) {
-  return state.metadata?.layers?.[sourceName]?.metrics?.[metric] || null;
+function metricDefinition(metric = state.metric) {
+  return METRICS[metric] || METRICS.energy_hot;
+}
+
+function weatherField(metric = state.metric, period = state.period) {
+  const def = metricDefinition(metric);
+  const weather = WEATHER_VARIABLES[def.variable];
+  return `${def.variable}_${period}_${weather.suffix}`;
+}
+
+function fieldForLayer(layerName, metric = state.metric) {
+  const def = metricDefinition(metric);
+  if (def.category === "weather") return layerName === "weather_500m" ? weatherField(metric, state.period) : null;
+  if (def.kind === "categorical") return layerName === "buildings" ? "building_type" : null;
+  return def.fieldByLayer?.[layerName] || null;
+}
+
+function statsLayerForMetric(metric = state.metric) {
+  const def = metricDefinition(metric);
+  if (def.category === "weather") return "weather_500m";
+  if (state.mode !== "buildings" && def.fieldByLayer?.grid_500m) return "grid_500m";
+  if (state.mode !== "grid" && def.fieldByLayer?.buildings) return "buildings";
+  return "grid_500m";
+}
+
+function metricStats(layerName, metric = state.metric) {
+  const field = fieldForLayer(layerName, metric);
+  return state.metadata?.layers?.[layerName]?.metrics?.[field] || null;
 }
 
 function showLoading(message) {
@@ -162,21 +317,45 @@ function tilesetConfig(kind) {
   return CONFIG.mapboxTilesets?.[kind] || {};
 }
 
-function hasHostedTilesets() {
-  return Boolean(
-    tilesetConfig("buildings").url &&
-      tilesetConfig("buildings").sourceLayer &&
-      tilesetConfig("grid").url &&
-      tilesetConfig("grid").sourceLayer
-  );
+function hasTileset(kind) {
+  return Boolean(tilesetConfig(kind).url);
+}
+
+function hasCoreHostedTilesets() {
+  return Boolean(tilesetConfig("buildings").url && tilesetConfig("grid").url);
 }
 
 function sourceLayer(kind) {
-  if (!state.useVectorTiles) return {};
-  if (state.useHostedTilesets) {
-    return { "source-layer": tilesetConfig(kind).sourceLayer };
+  if (state.sourceTypes[kind] !== "vector") return {};
+  return { "source-layer": state.sourceLayers[kind] };
+}
+
+function tilesetId(url) {
+  return url?.startsWith("mapbox://") ? url.replace("mapbox://", "") : "";
+}
+
+async function resolveTilesetSourceLayer(kind) {
+  const config = tilesetConfig(kind);
+  if (!config.url) return null;
+  if (config.sourceLayer) return config.sourceLayer;
+  const id = tilesetId(config.url);
+  if (!id) return null;
+  const response = await fetch(
+    `https://api.mapbox.com/v4/${id}.json?secure&access_token=${encodeURIComponent(mapboxgl.accessToken)}`,
+    { cache: "no-store" }
+  );
+  if (!response.ok) throw new Error(`Tileset metadata failed for ${kind}: ${response.status}`);
+  const tilejson = await response.json();
+  return tilejson.vector_layers?.[0]?.id || null;
+}
+
+async function resolveHostedSourceLayers() {
+  const kinds = ["buildings", "grid", "weather", "buildingOverview"].filter(hasTileset);
+  for (const kind of kinds) {
+    const sourceLayerId = await resolveTilesetSourceLayer(kind);
+    if (!sourceLayerId) throw new Error(`Could not resolve source layer for ${kind}`);
+    state.sourceLayers[kind] = sourceLayerId;
   }
-  return { "source-layer": kind === "grid" ? "grid_500m" : "buildings_sg" };
 }
 
 async function urlExists(path) {
@@ -188,40 +367,52 @@ async function urlExists(path) {
   }
 }
 
-function metricForActiveLayer() {
-  if (state.mode === "grid" && !metricStats("grid_500m", state.metric)) {
-    return "summer_pct";
-  }
-  return state.metric;
-}
-
-function buildInterpolateExpression(sourceName, metric) {
-  const def = METRICS[metric];
-  const stats = metricStats(sourceName, metric);
-  if (!stats || !stats.stops?.length) return "#8a949b";
+function buildInterpolateExpression(layerName, metric, fallbackColor = "rgba(144, 154, 162, 0.28)") {
+  const def = metricDefinition(metric);
+  const field = fieldForLayer(layerName, metric);
+  const stats = metricStats(layerName, metric);
+  if (!field || !stats || !stats.stops?.length) return fallbackColor;
   const stops = stats.stops;
-  const expression = ["interpolate", ["linear"], ["to-number", ["get", metric], stops[0]]];
+  const expression = ["interpolate", ["linear"], ["to-number", ["get", field], stops[0]]];
   stops.forEach((stop, index) => {
     expression.push(stop, def.ramp[index] || def.ramp[def.ramp.length - 1]);
   });
-  return ["case", ["has", metric], expression, "rgba(150, 159, 166, 0.26)"];
+  return ["case", ["has", field], expression, fallbackColor];
 }
 
 function buildTypeExpression() {
   const expression = ["match", ["coalesce", ["get", "building_type"], "unknown"]];
   Object.entries(TYPE_COLORS).forEach(([type, color]) => expression.push(type, color));
-  expression.push("#9aa0a6");
+  expression.push("#aab3bb");
+  return expression;
+}
+
+function buildArchetypeExpression() {
+  const expression = ["match", ["coalesce", ["get", "dominant_archetype"], "unknown"]];
+  Object.entries(BUILDING_TYPE_GROUPS).forEach(([group, def]) => expression.push(group, def.color));
+  expression.push("none", "rgba(170, 179, 187, 0.08)", "rgba(170, 179, 187, 0.18)");
   return expression;
 }
 
 function buildingColorExpression() {
   if (state.metric === "building_type") return buildTypeExpression();
-  return buildInterpolateExpression("buildings", state.metric);
+  if (metricDefinition().category === "weather") return "rgba(65, 79, 92, 0.42)";
+  return buildInterpolateExpression("buildings", state.metric, "rgba(94, 110, 124, 0.36)");
 }
 
 function gridColorExpression() {
-  const metric = metricForActiveLayer();
-  return buildInterpolateExpression("grid_500m", metric);
+  return buildInterpolateExpression("grid_500m", state.metric, "rgba(86, 112, 130, 0.18)");
+}
+
+function weatherColorExpression() {
+  return buildInterpolateExpression("weather_500m", state.metric, "rgba(92, 122, 145, 0.18)");
+}
+
+function overviewColorExpression() {
+  if (state.metric === "height_m" || state.metric === "eui_2023") {
+    return buildInterpolateExpression("building_overview_500m", state.metric, "rgba(115, 133, 148, 0.18)");
+  }
+  return buildArchetypeExpression();
 }
 
 function heightExpression() {
@@ -232,58 +423,98 @@ function heightExpression() {
   ];
 }
 
+function createMetricButton(container, key) {
+  const def = METRICS[key];
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = def.shortLabel;
+  button.dataset.metric = key;
+  button.addEventListener("click", () => {
+    state.metric = key;
+    if (def.category === "weather" && state.mode === "buildings") {
+      state.mode = "combined";
+      els.layerMode.value = "combined";
+    }
+    updateMapStyle();
+    updateMetricButtons();
+    updateLegend();
+  });
+  container.appendChild(button);
+}
+
 function initMetricButtons() {
-  const metrics = {
-    winter_pct: METRICS.winter_pct,
-    summer_pct: METRICS.summer_pct,
-    autumn_pct: METRICS.autumn_pct,
-    eui_2023: METRICS.eui_2023,
-    energy_total_kwh: METRICS.energy_total_kwh,
-    height_m: METRICS.height_m,
-    building_type: { label: "Building type", shortLabel: "Type", layer: "buildings" }
-  };
-  els.metricButtons.innerHTML = "";
-  Object.entries(metrics).forEach(([key, metric]) => {
+  [
+    [els.buildingMetricButtons, ["building_type", "height_m"]],
+    [els.weatherButtons, ["weather_wind", "weather_temp", "weather_rh", "weather_solar"]],
+    [
+      els.energyButtons,
+      ["energy_cold", "energy_hot", "energy_transition", "energy_microclimate", "eui_2023"]
+    ]
+  ].forEach(([container, keys]) => {
+    container.innerHTML = "";
+    keys.forEach((key) => createMetricButton(container, key));
+  });
+
+  els.periodButtons.innerHTML = "";
+  Object.entries(PERIODS).forEach(([key, period]) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = metric.shortLabel;
-    button.dataset.metric = key;
+    button.textContent = period.shortLabel;
+    button.dataset.period = key;
     button.addEventListener("click", () => {
-      state.metric = key;
+      state.period = key;
       updateMapStyle();
       updateMetricButtons();
       updateLegend();
     });
-    els.metricButtons.appendChild(button);
+    els.periodButtons.appendChild(button);
   });
   updateMetricButtons();
 }
 
 function updateMetricButtons() {
-  [...els.metricButtons.querySelectorAll("button")].forEach((button) => {
+  const buttons = [
+    ...els.buildingMetricButtons.querySelectorAll("button"),
+    ...els.weatherButtons.querySelectorAll("button"),
+    ...els.energyButtons.querySelectorAll("button")
+  ];
+  buttons.forEach((button) => {
     const metric = button.dataset.metric;
-    const unavailable = state.mode === "grid" && !metricStats("grid_500m", metric);
+    const def = metricDefinition(metric);
+    const unavailable = state.mode === "grid" && def.category !== "weather" && !fieldForLayer("grid_500m", metric);
     button.classList.toggle("active", metric === state.metric);
     button.disabled = unavailable;
   });
+  [...els.periodButtons.querySelectorAll("button")].forEach((button) => {
+    button.classList.toggle("active", button.dataset.period === state.period);
+  });
+  els.periodButtons.closest(".control-block").classList.toggle(
+    "hidden-block",
+    metricDefinition().category !== "weather"
+  );
+}
+
+function setVisibility(layer, visible) {
+  if (state.map.getLayer(layer)) {
+    state.map.setLayoutProperty(layer, "visibility", visible ? "visible" : "none");
+  }
 }
 
 function updateLayerVisibility() {
   if (!state.map) return;
+  const metric = metricDefinition();
   const showBuildings = state.mode !== "grid";
   const showGrid = state.mode !== "buildings";
-  const layers = {
-    "grid-fill": showGrid,
-    "grid-line": showGrid,
-    "grid-selected": showGrid,
-    "buildings-extrusion": showBuildings,
-    "building-selected": showBuildings
-  };
-  Object.entries(layers).forEach(([layer, visible]) => {
-    if (state.map.getLayer(layer)) {
-      state.map.setLayoutProperty(layer, "visibility", visible ? "visible" : "none");
-    }
-  });
+  const showWeather = metric.category === "weather" && showGrid;
+  const showGridFill = showGrid && !showWeather && Boolean(fieldForLayer("grid_500m", state.metric));
+  setVisibility("weather-fill", showWeather);
+  setVisibility("grid-fill", showGridFill);
+  setVisibility("grid-line", showGrid || showWeather);
+  setVisibility("grid-selected", showGrid || showWeather);
+  setVisibility("building-overview-fill", showBuildings);
+  setVisibility("building-overview-line", showBuildings);
+  setVisibility("buildings-extrusion", showBuildings);
+  setVisibility("building-selected", showBuildings);
 }
 
 function updateMapStyle() {
@@ -299,76 +530,145 @@ function updateMapStyle() {
     state.map.setPaintProperty("grid-fill", "fill-color", gridColorExpression());
     state.map.setPaintProperty("grid-fill", "fill-opacity", state.gridOpacity);
   }
+  if (state.map.getLayer("weather-fill")) {
+    state.map.setPaintProperty("weather-fill", "fill-color", weatherColorExpression());
+    state.map.setPaintProperty("weather-fill", "fill-opacity", Math.min(0.72, state.gridOpacity + 0.08));
+  }
+  if (state.map.getLayer("building-overview-fill")) {
+    state.map.setPaintProperty("building-overview-fill", "fill-color", overviewColorExpression());
+  }
   updateLayerVisibility();
 }
 
+function renderTypeLegend() {
+  const groups = state.metadata?.building_type_groups || BUILDING_TYPE_GROUPS;
+  const counts = state.metadata?.layers?.buildings?.building_type_counts || {};
+  els.typeLegend.innerHTML = Object.entries(groups)
+    .map(([groupId, group]) => {
+      const typeRows = group.types
+        .filter((type) => counts[type] || TYPE_COLORS[type])
+        .map((type) => {
+          const count = counts[type] ? compactCount(counts[type]) : "--";
+          return `
+            <button class="type-swatch-row" type="button" data-type="${type}">
+              <span class="swatch" style="background:${TYPE_COLORS[type] || group.color}"></span>
+              <span>${TYPE_LABELS[type] || type}</span>
+              <strong>${count}</strong>
+            </button>
+          `;
+        })
+        .join("");
+      return `
+        <div class="type-group">
+          <div class="type-group-head">
+            <span class="swatch large" style="background:${group.color}"></span>
+            <strong>${group.label}</strong>
+            <em>${group.share || ""}</em>
+          </div>
+          <div class="type-group-list">${typeRows}</div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
 function updateLegend() {
+  updateMetricButtons();
   if (state.metric === "building_type") {
-    els.legendTitle.textContent = "Building type";
-    els.legendRamp.style.background = "linear-gradient(90deg, #5ad7c7, #9bd76b, #5da7e8, #f5b84b, #f36b5d, #a57ce8)";
-    els.legendTicks.innerHTML = ["HDB", "Office", "Retail", "Industrial"].map((item) => `<span>${item}</span>`).join("");
+    els.legendTitle.textContent = "Building archetypes";
+    els.legendRamp.classList.add("hidden");
+    els.legendTicks.classList.add("hidden");
+    els.typeLegend.classList.remove("hidden");
+    renderTypeLegend();
     return;
   }
-  const metric = metricForActiveLayer();
-  const def = METRICS[metric];
-  const sourceName = state.mode === "grid" ? "grid_500m" : "buildings";
-  const stats = metricStats(sourceName, metric) || metricStats("buildings", metric) || metricStats("grid_500m", metric);
-  els.legendTitle.textContent = def.label;
+  els.legendRamp.classList.remove("hidden");
+  els.legendTicks.classList.remove("hidden");
+  els.typeLegend.classList.add("hidden");
+  const def = metricDefinition();
+  const statsLayer = statsLayerForMetric(state.metric);
+  const stats = metricStats(statsLayer, state.metric);
+  const periodLabel = def.category === "weather" ? ` - ${PERIODS[state.period].label}` : "";
+  els.legendTitle.textContent = `${def.label}${periodLabel}`;
   els.legendRamp.style.background = `linear-gradient(90deg, ${def.ramp.join(", ")})`;
   if (!stats?.stops) {
     els.legendTicks.innerHTML = "<span>No data</span>";
     return;
   }
-  els.legendTicks.innerHTML = stats.stops
-    .map((stop) => `<span>${formatNumber(stop, def.unit, def.scale)}</span>`)
-    .join("");
+  els.legendTicks.innerHTML = stats.stops.map((stop) => `<span>${formatNumber(stop, def.unit)}</span>`).join("");
 }
 
 function detailRow(label, value) {
   return `<div class="detail-row"><span>${label}</span><strong>${value}</strong></div>`;
 }
 
+function buildingTypeGroup(type) {
+  return Object.entries(BUILDING_TYPE_GROUPS).find(([, group]) => group.types.includes(type))?.[1]?.label || "Unknown";
+}
+
 function buildingDetails(props) {
-  const pctMetric = METRICS[state.metric] ? state.metric : "summer_pct";
-  const rows = [
+  const metricField = fieldForLayer("buildings", state.metric);
+  const metric = metricDefinition();
+  return [
     detailRow("Object ID", props.objectid ?? "No data"),
     detailRow("Source ID", props.source_id ?? "No data"),
     detailRow("Grid ID", props.grid_id ?? "No data"),
-    detailRow("Type", props.building_type ?? "No data"),
+    detailRow("Archetype", buildingTypeGroup(props.building_type)),
+    detailRow("Subtype", TYPE_LABELS[props.building_type] || props.building_type || "No data"),
     detailRow("Height", formatNumber(props.height_m, "m")),
     detailRow("Footprint", formatNumber(props.footprint_m2, "m2")),
     detailRow("GFA", formatNumber(props.gfa_m2, "m2")),
-    detailRow("EUI 2023", formatNumber(props.eui_2023, "kWh/m2")),
-    detailRow("Energy", formatNumber(props.energy_total_kwh, "kWh")),
-    detailRow("Winter", formatNumber(props.winter_pct, "%", 100)),
-    detailRow("Summer", formatNumber(props.summer_pct, "%", 100)),
-    detailRow("Transition", formatNumber(props.autumn_pct, "%", 100)),
-    detailRow("Active metric", formatNumber(props[pctMetric], METRICS[pctMetric]?.unit || "", METRICS[pctMetric]?.scale || 1))
-  ];
-  return rows.join("");
+    detailRow("Measured EUI", formatNumber(props.eui_2023, "kWh/m2")),
+    detailRow("Energy use", formatNumber(props.energy_total_kwh, "kWh")),
+    detailRow("Relative cold sensitivity", formatNumber(props.winter_pct, "%", 100)),
+    detailRow("Relative hot sensitivity", formatNumber(props.summer_pct, "%", 100)),
+    detailRow("Transition sensitivity", formatNumber(props.autumn_pct, "%", 100)),
+    detailRow("Active metric", metric.kind === "categorical" ? TYPE_LABELS[props.building_type] || props.building_type : formatNumber(props[metricField], metric.unit))
+  ].join("");
 }
 
 function gridDetails(props) {
+  const metric = metricDefinition();
+  const metricField = metric.category === "weather" ? weatherField() : fieldForLayer("grid_500m", state.metric);
+  const rows = [
+    detailRow("Grid ID", props.grid_id ?? "No data"),
+    detailRow("Relative cold energy", formatNumber(props.winter_energy_kwh, "kWh")),
+    detailRow("Relative hot energy", formatNumber(props.summer_energy_kwh, "kWh")),
+    detailRow("Transition energy", formatNumber(props.autumn_energy_kwh, "kWh")),
+    detailRow("Relative cold sensitivity", formatNumber(props.winter_pct, "%", 100)),
+    detailRow("Relative hot sensitivity", formatNumber(props.summer_pct, "%", 100)),
+    detailRow("Transition sensitivity", formatNumber(props.autumn_pct, "%", 100))
+  ];
+  if (metric.category === "weather") {
+    rows.push(detailRow(`${metric.label} (${PERIODS[state.period].shortLabel})`, formatNumber(props[metricField], metric.unit)));
+  }
+  return rows.join("");
+}
+
+function overviewDetails(props) {
   return [
     detailRow("Grid ID", props.grid_id ?? "No data"),
-    detailRow("Winter", formatNumber(props.winter_pct, "%", 100)),
-    detailRow("Summer", formatNumber(props.summer_pct, "%", 100)),
-    detailRow("Transition", formatNumber(props.autumn_pct, "%", 100)),
-    detailRow("Winter energy", formatNumber(props.winter_energy_kwh, "kWh")),
-    detailRow("Summer energy", formatNumber(props.summer_energy_kwh, "kWh")),
-    detailRow("Transition energy", formatNumber(props.autumn_energy_kwh, "kWh"))
+    detailRow("Buildings", compactCount(props.building_count)),
+    detailRow("Dominant archetype", props.dominant_archetype_label || "No data"),
+    detailRow("Dominant subtype", props.dominant_type_label || "No data"),
+    detailRow("Mean height", formatNumber(props.mean_height_m, "m")),
+    detailRow("Mean EUI 2023", formatNumber(props.mean_eui_2023, "kWh/m2")),
+    detailRow("Mean energy use", formatNumber(props.mean_energy_kwh, "kWh"))
   ].join("");
 }
 
 function updateFeaturePanel(feature, type) {
   if (!feature) {
-    els.featureTitle.textContent = "Click a building or grid cell";
+    els.featureTitle.textContent = "Click a building or district cell";
     els.featureDetails.innerHTML = "<p>Use hover for quick values and click to pin detailed attributes.</p>";
     return;
   }
   if (type === "building") {
     els.featureTitle.textContent = `Building ${feature.properties.objectid}`;
     els.featureDetails.innerHTML = buildingDetails(feature.properties);
+  } else if (type === "overview") {
+    els.featureTitle.textContent = `District overview ${feature.properties.grid_id}`;
+    els.featureDetails.innerHTML = overviewDetails(feature.properties);
   } else {
     els.featureTitle.textContent = `500 m grid ${feature.properties.grid_id}`;
     els.featureDetails.innerHTML = gridDetails(feature.properties);
@@ -377,15 +677,32 @@ function updateFeaturePanel(feature, type) {
 
 function popupHtml(feature, type) {
   const props = feature.properties;
-  const metric = metricForActiveLayer();
-  const def = METRICS[metric];
-  const title = type === "building" ? `Building ${props.objectid}` : `Grid ${props.grid_id}`;
-  const typeLine = type === "building" ? `<div class="popup-line"><span>Type</span><strong>${props.building_type || "No data"}</strong></div>` : "";
+  const metric = metricDefinition();
+  if (type === "building") {
+    const field = fieldForLayer("buildings", state.metric);
+    const value =
+      metric.kind === "categorical"
+        ? TYPE_LABELS[props.building_type] || props.building_type || "No data"
+        : formatNumber(props[field], metric.unit);
+    return `
+      <p class="popup-title">Building ${props.objectid}</p>
+      <div class="popup-line"><span>Subtype</span><strong>${TYPE_LABELS[props.building_type] || props.building_type || "No data"}</strong></div>
+      <div class="popup-line"><span>${metric.label}</span><strong>${value}</strong></div>
+      <div class="popup-line"><span>Height</span><strong>${formatNumber(props.height_m, "m")}</strong></div>
+    `;
+  }
+  if (type === "overview") {
+    return `
+      <p class="popup-title">District overview ${props.grid_id}</p>
+      <div class="popup-line"><span>Buildings</span><strong>${compactCount(props.building_count)}</strong></div>
+      <div class="popup-line"><span>Dominant type</span><strong>${props.dominant_type_label || "No data"}</strong></div>
+    `;
+  }
+  const field = metric.category === "weather" ? weatherField() : fieldForLayer("grid_500m", state.metric);
+  const label = metric.category === "weather" ? `${metric.label} (${PERIODS[state.period].shortLabel})` : metric.label;
   return `
-    <p class="popup-title">${title}</p>
-    ${typeLine}
-    <div class="popup-line"><span>${def.label}</span><strong>${formatNumber(props[metric], def.unit, def.scale)}</strong></div>
-    <div class="popup-line"><span>Height</span><strong>${formatNumber(props.height_m, "m")}</strong></div>
+    <p class="popup-title">500 m grid ${props.grid_id}</p>
+    <div class="popup-line"><span>${label}</span><strong>${formatNumber(props[field], metric.unit)}</strong></div>
   `;
 }
 
@@ -408,10 +725,11 @@ function featureCenter(feature) {
   if (feature.properties?.lon && feature.properties?.lat) {
     return [Number(feature.properties.lon), Number(feature.properties.lat)];
   }
+  if (feature.geometry?.type === "Point") return feature.geometry.coordinates;
   const coords = [];
   const walk = (part) => {
-    if (typeof part[0] === "number") coords.push(part);
-    else part.forEach(walk);
+    if (typeof part?.[0] === "number") coords.push(part);
+    else part?.forEach(walk);
   };
   walk(feature.geometry.coordinates);
   const lon = coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
@@ -509,19 +827,46 @@ async function search() {
   });
 }
 
-function addLayers() {
+function addHostedSource(kind, promoteField) {
+  state.sourceTypes[kind] = "vector";
+  state.map.addSource(kind, {
+    type: "vector",
+    url: tilesetConfig(kind).url,
+    promoteId: { [state.sourceLayers[kind]]: promoteField }
+  });
+}
+
+function addGeojsonSource(kind, data, promoteField) {
+  state.sourceTypes[kind] = "geojson";
+  state.map.addSource(kind, {
+    type: "geojson",
+    data,
+    promoteId: promoteField
+  });
+}
+
+async function addOptionalGridSource(kind, dataUrl, promoteField) {
+  if (hasTileset(kind)) {
+    addHostedSource(kind, promoteField);
+    return true;
+  }
+  if (await urlExists(dataUrl)) {
+    addGeojsonSource(kind, dataUrl, promoteField);
+    return true;
+  }
+  return false;
+}
+
+async function addLayers() {
   if (state.useHostedTilesets) {
-    state.map.addSource("grid", {
-      type: "vector",
-      url: tilesetConfig("grid").url,
-      promoteId: { [tilesetConfig("grid").sourceLayer]: "grid_id" }
-    });
-    state.map.addSource("buildings", {
-      type: "vector",
-      url: tilesetConfig("buildings").url,
-      promoteId: { [tilesetConfig("buildings").sourceLayer]: "objectid" }
-    });
+    await resolveHostedSourceLayers();
+    addHostedSource("grid", "grid_id");
+    addHostedSource("buildings", "objectid");
   } else if (state.useVectorTiles) {
+    state.sourceTypes.grid = "vector";
+    state.sourceTypes.buildings = "vector";
+    state.sourceLayers.grid = "grid_500m";
+    state.sourceLayers.buildings = "buildings_sg";
     state.map.addSource("grid", {
       type: "vector",
       tiles: [vectorTileUrl("grid")],
@@ -537,15 +882,53 @@ function addLayers() {
       promoteId: { buildings_sg: "objectid" }
     });
   } else {
-    state.map.addSource("grid", {
-      type: "geojson",
-      data: state.grid,
-      promoteId: "grid_id"
+    addGeojsonSource("grid", state.grid, "grid_id");
+    addGeojsonSource("buildings", state.buildings, "objectid");
+  }
+
+  state.fallbackSources.weather = await addOptionalGridSource(
+    "weather",
+    "mapbox-studio-upload/03_weather_500m.geojson",
+    "grid_id"
+  );
+  state.fallbackSources.buildingOverview = await addOptionalGridSource(
+    "buildingOverview",
+    "mapbox-studio-upload/04_building_overview_500m.geojson",
+    "grid_id"
+  );
+
+  if (state.fallbackSources.buildingOverview) {
+    state.map.addLayer({
+      id: "building-overview-fill",
+      type: "fill",
+      source: "buildingOverview",
+      ...sourceLayer("buildingOverview"),
+      maxzoom: 11.2,
+      paint: {
+        "fill-color": overviewColorExpression(),
+        "fill-opacity": [
+          "interpolate",
+          ["linear"],
+          ["to-number", ["get", "building_count"], 0],
+          0,
+          0.05,
+          20,
+          0.22,
+          150,
+          0.48
+        ]
+      }
     });
-    state.map.addSource("buildings", {
-      type: "geojson",
-      data: state.buildings,
-      promoteId: "objectid"
+    state.map.addLayer({
+      id: "building-overview-line",
+      type: "line",
+      source: "buildingOverview",
+      ...sourceLayer("buildingOverview"),
+      maxzoom: 11.2,
+      paint: {
+        "line-color": "rgba(42, 55, 67, 0.24)",
+        "line-width": 0.35
+      }
     });
   }
 
@@ -565,10 +948,24 @@ function addLayers() {
     source: "grid",
     ...sourceLayer("grid"),
     paint: {
-      "line-color": "rgba(43, 55, 64, 0.24)",
+      "line-color": "rgba(43, 55, 64, 0.22)",
       "line-width": 0.5
     }
   });
+
+  if (state.fallbackSources.weather) {
+    state.map.addLayer({
+      id: "weather-fill",
+      type: "fill",
+      source: "weather",
+      ...sourceLayer("weather"),
+      paint: {
+        "fill-color": weatherColorExpression(),
+        "fill-opacity": Math.min(0.72, state.gridOpacity + 0.08)
+      }
+    });
+  }
+
   state.map.addLayer({
     id: "grid-selected",
     type: "line",
@@ -576,7 +973,7 @@ function addLayers() {
     ...sourceLayer("grid"),
     filter: ["==", ["get", "grid_id"], -999999],
     paint: {
-      "line-color": "#1a2a35",
+      "line-color": "#111827",
       "line-width": 3
     }
   });
@@ -585,12 +982,12 @@ function addLayers() {
     type: "fill-extrusion",
     source: "buildings",
     ...sourceLayer("buildings"),
-    minzoom: 10,
+    minzoom: 11,
     paint: {
       "fill-extrusion-color": buildingColorExpression(),
       "fill-extrusion-height": heightExpression(),
       "fill-extrusion-base": 0,
-      "fill-extrusion-opacity": 0.86,
+      "fill-extrusion-opacity": 0.88,
       "fill-extrusion-vertical-gradient": true
     }
   });
@@ -599,12 +996,13 @@ function addLayers() {
     type: "fill-extrusion",
     source: "buildings",
     ...sourceLayer("buildings"),
+    minzoom: 11,
     filter: ["==", ["get", "objectid"], -999999],
     paint: {
       "fill-extrusion-color": "#111827",
       "fill-extrusion-height": heightExpression(),
       "fill-extrusion-base": 0,
-      "fill-extrusion-opacity": 0.9
+      "fill-extrusion-opacity": 0.92
     }
   });
 
@@ -614,12 +1012,17 @@ function addLayers() {
     offset: 12
   });
 
-  ["buildings-extrusion", "grid-fill"].forEach((layer) => {
+  [
+    ["buildings-extrusion", "building"],
+    ["grid-fill", "grid"],
+    ["weather-fill", "grid"],
+    ["building-overview-fill", "overview"]
+  ].forEach(([layer, type]) => {
+    if (!state.map.getLayer(layer)) return;
     state.map.on("mousemove", layer, (event) => {
       state.map.getCanvas().style.cursor = "pointer";
       const feature = event.features?.[0];
       if (!feature) return;
-      const type = layer === "buildings-extrusion" ? "building" : "grid";
       state.popup.setLngLat(event.lngLat).setHTML(popupHtml(feature, type)).addTo(state.map);
     });
     state.map.on("mouseleave", layer, () => {
@@ -629,7 +1032,6 @@ function addLayers() {
     state.map.on("click", layer, (event) => {
       const feature = event.features?.[0];
       if (!feature) return;
-      const type = layer === "buildings-extrusion" ? "building" : "grid";
       setSelectedFeature(feature, type);
     });
   });
@@ -641,12 +1043,11 @@ async function loadData() {
   showLoading("Loading metadata...");
   const metadataResponse = await fetch("data/metadata.json", { cache: "no-store" });
   if (!metadataResponse.ok) throw new Error(`Metadata request failed: ${metadataResponse.status}`);
-  const metadata = await metadataResponse.json();
-  state.metadata = metadata;
-  els.buildingCount.textContent = compactCount(metadata.layers.buildings.count);
-  els.gridCount.textContent = compactCount(metadata.layers.grid_500m.count);
+  state.metadata = await metadataResponse.json();
+  els.buildingCount.textContent = compactCount(state.metadata.layers.buildings.count);
+  els.gridCount.textContent = compactCount(state.metadata.layers.grid_500m.count);
 
-  state.useHostedTilesets = hasHostedTilesets();
+  state.useHostedTilesets = hasCoreHostedTilesets();
   if (state.useHostedTilesets) {
     state.useVectorTiles = true;
     showLoading("Loading Mapbox Studio tilesets...");
@@ -670,7 +1071,7 @@ async function loadData() {
   if (!gridResponse.ok) throw new Error(`Grid request failed: ${gridResponse.status}`);
   state.grid = await gridResponse.json();
 
-  showLoading("Loading building GeoJSON (about 82 MB)...");
+  showLoading("Loading building GeoJSON...");
   const buildingResponse = await fetch("data/buildings_sg.geojson", { cache: "no-store" });
   if (!buildingResponse.ok) throw new Error(`Building request failed: ${buildingResponse.status}`);
   state.buildings = await buildingResponse.json();
@@ -682,8 +1083,8 @@ function initMap(token) {
     container: "map",
     style: CONFIG.styleUrl || "mapbox://styles/mapbox/light-v11",
     center: [103.8198, 1.3521],
-    zoom: 11.25,
-    pitch: 58,
+    zoom: 10.95,
+    pitch: 52,
     bearing: -18,
     antialias: true
   });
@@ -693,7 +1094,7 @@ function initMap(token) {
   state.map.on("load", async () => {
     try {
       await loadData();
-      addLayers();
+      await addLayers();
       updateLegend();
       hideLoading();
     } catch (error) {
@@ -718,6 +1119,9 @@ function bindEvents() {
   });
   els.layerMode.addEventListener("change", () => {
     state.mode = els.layerMode.value;
+    if (state.mode === "grid" && metricDefinition().category !== "weather" && !fieldForLayer("grid_500m", state.metric)) {
+      state.metric = "energy_hot";
+    }
     updateMetricButtons();
     updateMapStyle();
     updateLegend();
@@ -742,7 +1146,7 @@ function bindEvents() {
       state.map.setFilter("grid-selected", ["==", ["get", "grid_id"], -999999]);
     }
     updateFeaturePanel(null);
-    state.map?.flyTo({ center: [103.8198, 1.3521], zoom: 11.25, pitch: 58, bearing: -18, duration: 900 });
+    state.map?.flyTo({ center: [103.8198, 1.3521], zoom: 10.95, pitch: 52, bearing: -18, duration: 900 });
   });
 }
 

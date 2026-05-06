@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-30T06:36:26.251042+00:00",
+  "generated_at": "2026-05-06T07:21:51.965436+00:00",
   "source_gdb": "F:\\博士文件\\石老师课题组\\第四篇小论文-城市能碳计算\\新加坡各类数据\\建筑几何数据\\Singapore\\Singapore.gdb",
   "layers": {
     "buildings": {
@@ -268,6 +268,314 @@
           ]
         }
       }
+    },
+    "weather_500m": {
+      "source_layer": "weather_500m",
+      "count": 4841,
+      "metrics": {
+        "temp_hot_c": {
+          "min": 28.6301,
+          "max": 30.9769,
+          "mean": 29.763818,
+          "stops": [
+            29.09461,
+            29.46125,
+            29.6106,
+            30.1047,
+            30.7236
+          ]
+        },
+        "wind_hot_ms": {
+          "min": 0.5614,
+          "max": 3.7187,
+          "mean": 1.653232,
+          "stops": [
+            0.7189,
+            0.93425,
+            1.4207,
+            2.1972,
+            3.21988
+          ]
+        },
+        "rh_hot_pct": {
+          "min": 63.3357,
+          "max": 86.2711,
+          "mean": 74.046797,
+          "stops": [
+            64.65866,
+            68.67095,
+            72.6089,
+            79.52685,
+            85.3781
+          ]
+        },
+        "solar_hot_wm2": {
+          "min": 197.6377,
+          "max": 290.7736,
+          "mean": 273.301371,
+          "stops": [
+            242.86495,
+            264.75505,
+            280.0614,
+            284.3381,
+            287.14207
+          ]
+        },
+        "temp_transition_c": {
+          "min": 28.2267,
+          "max": 30.595,
+          "mean": 29.407546,
+          "stops": [
+            28.63741,
+            29.047525,
+            29.2532,
+            29.8308,
+            30.378685
+          ]
+        },
+        "wind_transition_ms": {
+          "min": 0.6661,
+          "max": 3.9482,
+          "mean": 1.802931,
+          "stops": [
+            0.771305,
+            0.99055,
+            1.50915,
+            2.3462,
+            3.669585
+          ]
+        },
+        "rh_transition_pct": {
+          "min": 61.8258,
+          "max": 85.1058,
+          "mean": 71.728784,
+          "stops": [
+            62.760915,
+            65.809975,
+            70.1662,
+            77.130575,
+            84.10292
+          ]
+        },
+        "solar_transition_wm2": {
+          "min": 243.844,
+          "max": 307.6618,
+          "mean": 286.890756,
+          "stops": [
+            259.174115,
+            279.18275,
+            288.9991,
+            296.674775,
+            305.356085
+          ]
+        },
+        "temp_cold_c": {
+          "min": 26.6622,
+          "max": 29.2484,
+          "mean": 28.13712,
+          "stops": [
+            27.23225,
+            27.7229,
+            28.19775,
+            28.5218,
+            28.97919
+          ]
+        },
+        "wind_cold_ms": {
+          "min": 0.709,
+          "max": 5.6093,
+          "mean": 2.112653,
+          "stops": [
+            0.847205,
+            1.090975,
+            1.7137,
+            2.789675,
+            4.56649
+          ]
+        },
+        "rh_cold_pct": {
+          "min": 68.5101,
+          "max": 88.272,
+          "mean": 77.946032,
+          "stops": [
+            70.42774,
+            73.65715,
+            77.98355,
+            82.113675,
+            85.7458
+          ]
+        },
+        "solar_cold_wm2": {
+          "min": 169.5767,
+          "max": 257.0886,
+          "mean": 213.39902,
+          "stops": [
+            188.57447,
+            202.501425,
+            213.0915,
+            224.199375,
+            239.76637
+          ]
+        }
+      },
+      "periods": {
+        "hot": "Relative hot (May)",
+        "transition": "Transition (Oct)",
+        "cold": "Relative cold (Dec)"
+      },
+      "variables": {
+        "temp": {
+          "label": "2 m temperature",
+          "unit": "degC"
+        },
+        "wind": {
+          "label": "10 m wind speed",
+          "unit": "m/s"
+        },
+        "rh": {
+          "label": "Relative humidity",
+          "unit": "%"
+        },
+        "solar": {
+          "label": "Solar shortwave radiation",
+          "unit": "W/m2"
+        }
+      }
+    },
+    "building_overview_500m": {
+      "source_layer": "building_overview_500m",
+      "count": 4841,
+      "metrics": {
+        "building_count": {
+          "min": 0.0,
+          "max": 673.0,
+          "mean": 24.530675,
+          "stops": [
+            0.0,
+            0.0,
+            1.0,
+            24.0,
+            124.0
+          ]
+        },
+        "mean_height_m": {
+          "min": 0.0,
+          "max": 69.055,
+          "mean": 11.169257,
+          "stops": [
+            0.0,
+            0.0,
+            0.0,
+            22.634,
+            35.939
+          ]
+        },
+        "mean_eui_2023": {
+          "min": 0.0,
+          "max": 2834.833,
+          "mean": 17.440929,
+          "stops": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            131.0
+          ]
+        },
+        "mean_energy_kwh": {
+          "min": 0.0,
+          "max": 25638160.425,
+          "mean": 122478.331749,
+          "stops": [
+            0.0,
+            0.0,
+            3385.814,
+            102140.522,
+            443872.507
+          ]
+        }
+      }
     }
+  },
+  "building_type_groups": {
+    "public_service": {
+      "label": "Public service",
+      "share": "11.6%",
+      "color": "#2563eb",
+      "types": [
+        "industrial",
+        "hospital",
+        "clinic",
+        "nursing_home"
+      ]
+    },
+    "commercial": {
+      "label": "Commercial",
+      "share": "5.4%",
+      "color": "#ea580c",
+      "types": [
+        "retail",
+        "mixed_development",
+        "business_park",
+        "shophouse",
+        "hawker_centre"
+      ]
+    },
+    "education": {
+      "label": "Education",
+      "share": "2.2%",
+      "color": "#7c3aed",
+      "types": [
+        "ihl",
+        "non_ihl"
+      ]
+    },
+    "residential": {
+      "label": "Residential",
+      "share": "77.4%",
+      "color": "#059669",
+      "types": [
+        "private_apartment",
+        "hdb",
+        "landed_property",
+        "hotel"
+      ]
+    },
+    "office_amenity": {
+      "label": "Office and amenities",
+      "share": "3.4%",
+      "color": "#0891b2",
+      "types": [
+        "office",
+        "community_cultural",
+        "data_centre",
+        "sports",
+        "restaurant",
+        "supermarket"
+      ]
+    }
+  },
+  "building_type_labels": {
+    "business_park": "Business park",
+    "clinic": "Clinic",
+    "community_cultural": "Community cultural",
+    "data_centre": "Data center",
+    "hawker_centre": "Hawker centre",
+    "hdb": "HDB",
+    "hospital": "Hospital",
+    "hotel": "Hotel",
+    "ihl": "Institutes of higher learning",
+    "industrial": "Industrial",
+    "landed_property": "Landed property",
+    "mixed_development": "Mixed development",
+    "non_ihl": "Non-institutes of higher learning",
+    "nursing_home": "Nursing home",
+    "office": "Office",
+    "private_apartment": "Private apartment",
+    "restaurant": "Restaurant",
+    "retail": "Retail",
+    "shophouse": "Shophouse",
+    "sports": "Sports",
+    "supermarket": "Supermarket"
   }
 }
