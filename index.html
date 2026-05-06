@@ -50,6 +50,17 @@
           <div id="periodButtons" class="segmented compact three"></div>
         </div>
 
+        <div id="weatherTimeBlock" class="control-block weather-time-block hidden-block">
+          <div class="control-label-row">
+            <span class="control-label">WRF time</span>
+            <output id="weatherTimeLabel">--</output>
+          </div>
+          <div class="time-row">
+            <input id="weatherTime" type="range" min="0" max="0" value="0" step="1" />
+            <button id="weatherPlay" type="button">Play</button>
+          </div>
+        </div>
+
         <div class="control-block metric-block">
           <span class="control-label">Energy Use</span>
           <div id="energyButtons" class="button-stack"></div>
@@ -130,7 +141,7 @@
     </main>
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
-    <script src="src/config.js?v=20260506-weather"></script>
-    <script src="src/app.js?v=20260506-weather"></script>
+    <script src="src/config.js?v=20260506-hourly"></script>
+    <script src="src/app.js?v=20260506-hourly"></script>
   </body>
 </html>

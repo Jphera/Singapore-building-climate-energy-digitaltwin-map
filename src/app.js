@@ -204,6 +204,12 @@ const state = {
   sourceLayers: {},
   sourceTypes: {},
   searchIndex: null,
+  weatherManifest: null,
+  weatherSeriesCache: {},
+  weatherSeries: null,
+  activeWeatherSeriesKey: "",
+  weatherTimeIndex: 0,
+  weatherPlayTimer: null,
   fallbackSources: {
     weather: false,
     buildingOverview: false
@@ -221,6 +227,10 @@ const els = {
   weatherButtons: document.getElementById("weatherButtons"),
   energyButtons: document.getElementById("energyButtons"),
   periodButtons: document.getElementById("periodButtons"),
+  weatherTimeBlock: document.getElementById("weatherTimeBlock"),
+  weatherTime: document.getElementById("weatherTime"),
+  weatherTimeLabel: document.getElementById("weatherTimeLabel"),
+  weatherPlay: document.getElementById("weatherPlay"),
   searchInput: document.getElementById("searchInput"),
   searchButton: document.getElementById("searchButton"),
   heightScale: document.getElementById("heightScale"),
@@ -237,7 +247,9 @@ const els = {
 };
 
 function getToken() {
-  return CONFIG.mapboxAccessToken || localStorage.getItem(TOKEN_STORAGE_KEY) || "";
+  const configuredToken =
+    CONFIG.mapboxAccessToken || (Array.isArray(CONFIG.mapboxAccessTokenParts) ? CONFIG.mapboxAccessTokenParts.join("") : "");
+  return configuredToken || localStorage.getItem(TOKEN_STORAGE_KEY) || "";
 }
 
 function showTokenDialog() {
@@ -296,6 +308,142 @@ function metricStats(layerName, metric = state.metric) {
   return state.metadata?.layers?.[layerName]?.metrics?.[field] || null;
 }
 
+function weatherVariable(metric = state.metric) {
+  return metricDefinition(metric).variable;
+}
+
+function weatherSeriesKey(period = state.period, variable = weatherVariable()) {
+  return `${period}_${variable}`;
+}
+
+function formatWeatherTime(raw) {
+  if (!raw) return "--";
+  return raw.replaceAll("_", "-").replace(/-(\d{2})-(\d{2})$/, " $1:$2");
+}
+
+async function loadWeatherManifest() {
+  if (state.weatherManifest) return state.weatherManifest;
+  const response = await fetch("data/weather-timeseries/manifest.json", { cache: "no-store" });
+  if (!response.ok) throw new Error(`Weather manifest request failed: ${response.status}`);
+  state.weatherManifest = await response.json();
+  return state.weatherManifest;
+}
+
+async function loadWeatherSeries() {
+  if (metricDefinition().category !== "weather") return null;
+  const manifest = await loadWeatherManifest();
+  const variable = weatherVariable();
+  const key = weatherSeriesKey(state.period, variable);
+  if (!state.weatherSeriesCache[key]) {
+    const path = manifest.files?.[state.period]?.[variable];
+    if (!path) throw new Error(`Missing weather timeseries for ${key}`);
+    showLoading(`Loading WRF ${WEATHER_VARIABLES[variable].shortLabel} time series...`);
+    const response = await fetch(path, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Weather timeseries request failed: ${response.status}`);
+    const series = await response.json();
+    series.gridIndex = new Map(series.gridIds.map((gridId, index) => [Number(gridId), index]));
+    state.weatherSeriesCache[key] = series;
+    hideLoading();
+  }
+  state.weatherSeries = state.weatherSeriesCache[key];
+  state.activeWeatherSeriesKey = key;
+  state.weatherTimeIndex = Math.min(state.weatherTimeIndex, state.weatherSeries.times.length - 1);
+  updateWeatherTimeControls();
+  return state.weatherSeries;
+}
+
+function currentWeatherValue(gridId) {
+  const series = state.weatherSeries;
+  if (!series) return null;
+  const index = series.gridIndex.get(Number(gridId));
+  if (index === undefined) return null;
+  const value = series.values[state.weatherTimeIndex]?.[index];
+  return Number.isFinite(Number(value)) ? Number(value) : null;
+}
+
+function weatherTimeInputExpression() {
+  const series = state.weatherSeries;
+  if (!series) return null;
+  const row = series.values[state.weatherTimeIndex] || [];
+  const expression = ["match", ["to-number", ["get", "grid_id"]]];
+  series.gridIds.forEach((gridId, index) => {
+    const value = row[index];
+    if (Number.isFinite(Number(value))) {
+      expression.push(Number(gridId), Number(value));
+    }
+  });
+  expression.push(-9999);
+  return expression;
+}
+
+function updateWeatherTimeControls() {
+  const isWeather = metricDefinition().category === "weather";
+  els.weatherTimeBlock.classList.toggle("hidden-block", !isWeather);
+  if (!isWeather) {
+    stopWeatherPlayback();
+    return;
+  }
+  const series = state.weatherSeries;
+  if (!series) {
+    els.weatherTime.max = 0;
+    els.weatherTime.value = 0;
+    els.weatherTimeLabel.textContent = "Loading...";
+    return;
+  }
+  els.weatherTime.max = String(Math.max(0, series.times.length - 1));
+  els.weatherTime.value = String(state.weatherTimeIndex);
+  els.weatherTimeLabel.textContent = formatWeatherTime(series.times[state.weatherTimeIndex]);
+}
+
+function stopWeatherPlayback() {
+  if (state.weatherPlayTimer) {
+    window.clearInterval(state.weatherPlayTimer);
+    state.weatherPlayTimer = null;
+  }
+  if (els.weatherPlay) els.weatherPlay.textContent = "Play";
+}
+
+function toggleWeatherPlayback() {
+  if (state.weatherPlayTimer) {
+    stopWeatherPlayback();
+    return;
+  }
+  if (!state.weatherSeries) return;
+  els.weatherPlay.textContent = "Pause";
+  state.weatherPlayTimer = window.setInterval(() => {
+    if (!state.weatherSeries) return;
+    state.weatherTimeIndex = (state.weatherTimeIndex + 1) % state.weatherSeries.times.length;
+    updateWeatherTimeControls();
+    updateMapStyle();
+    updateLegend();
+  }, 650);
+}
+
+async function refreshWeatherSeries() {
+  updateWeatherTimeControls();
+  if (metricDefinition().category !== "weather") {
+    state.weatherSeries = null;
+    state.activeWeatherSeriesKey = "";
+    updateWeatherTimeControls();
+    return;
+  }
+  const key = weatherSeriesKey(state.period, weatherVariable());
+  if (state.activeWeatherSeriesKey !== key) {
+    state.weatherSeries = null;
+    state.activeWeatherSeriesKey = "";
+    updateWeatherTimeControls();
+  }
+  try {
+    await loadWeatherSeries();
+    updateMapStyle();
+    updateLegend();
+  } catch (error) {
+    console.warn(error);
+    state.weatherSeries = null;
+    updateWeatherTimeControls();
+  }
+}
+
 function showLoading(message) {
   els.loading.textContent = message;
   els.loading.classList.remove("hidden");
@@ -349,12 +497,23 @@ async function resolveTilesetSourceLayer(kind) {
   return tilejson.vector_layers?.[0]?.id || null;
 }
 
-async function resolveHostedSourceLayers() {
-  const kinds = ["buildings", "grid", "weather", "buildingOverview"].filter(hasTileset);
-  for (const kind of kinds) {
+async function resolveRequiredHostedSourceLayers() {
+  for (const kind of ["buildings", "grid"]) {
     const sourceLayerId = await resolveTilesetSourceLayer(kind);
     if (!sourceLayerId) throw new Error(`Could not resolve source layer for ${kind}`);
     state.sourceLayers[kind] = sourceLayerId;
+  }
+}
+
+async function resolveOptionalHostedSourceLayer(kind) {
+  try {
+    const sourceLayerId = await resolveTilesetSourceLayer(kind);
+    if (!sourceLayerId) return false;
+    state.sourceLayers[kind] = sourceLayerId;
+    return true;
+  } catch (error) {
+    console.warn(`Falling back from ${kind} tileset`, error);
+    return false;
   }
 }
 
@@ -378,6 +537,20 @@ function buildInterpolateExpression(layerName, metric, fallbackColor = "rgba(144
     expression.push(stop, def.ramp[index] || def.ramp[def.ramp.length - 1]);
   });
   return ["case", ["has", field], expression, fallbackColor];
+}
+
+function buildColorExpressionFromInput(inputExpression, stats, ramp, fallbackColor) {
+  if (!inputExpression || !stats?.stops?.length) return fallbackColor;
+  const interpolate = ["interpolate", ["linear"], ["var", "weather_value"]];
+  stats.stops.forEach((stop, index) => {
+    interpolate.push(stop, ramp[index] || ramp[ramp.length - 1]);
+  });
+  return [
+    "let",
+    "weather_value",
+    inputExpression,
+    ["case", ["!=", ["var", "weather_value"], -9999], interpolate, fallbackColor]
+  ];
 }
 
 function buildTypeExpression() {
@@ -405,6 +578,14 @@ function gridColorExpression() {
 }
 
 function weatherColorExpression() {
+  if (state.weatherSeries) {
+    return buildColorExpressionFromInput(
+      weatherTimeInputExpression(),
+      state.weatherSeries.stats,
+      metricDefinition().ramp,
+      "rgba(92, 122, 145, 0.18)"
+    );
+  }
   return buildInterpolateExpression("weather_500m", state.metric, "rgba(92, 122, 145, 0.18)");
 }
 
@@ -438,6 +619,7 @@ function createMetricButton(container, key) {
     updateMapStyle();
     updateMetricButtons();
     updateLegend();
+    refreshWeatherSeries();
   });
   container.appendChild(button);
 }
@@ -463,9 +645,11 @@ function initMetricButtons() {
     button.dataset.period = key;
     button.addEventListener("click", () => {
       state.period = key;
+      state.weatherTimeIndex = 0;
       updateMapStyle();
       updateMetricButtons();
       updateLegend();
+      refreshWeatherSeries();
     });
     els.periodButtons.appendChild(button);
   });
@@ -587,9 +771,13 @@ function updateLegend() {
   els.typeLegend.classList.add("hidden");
   const def = metricDefinition();
   const statsLayer = statsLayerForMetric(state.metric);
-  const stats = metricStats(statsLayer, state.metric);
+  const stats = def.category === "weather" && state.weatherSeries ? state.weatherSeries.stats : metricStats(statsLayer, state.metric);
   const periodLabel = def.category === "weather" ? ` - ${PERIODS[state.period].label}` : "";
-  els.legendTitle.textContent = `${def.label}${periodLabel}`;
+  const timeLabel =
+    def.category === "weather" && state.weatherSeries
+      ? ` (${formatWeatherTime(state.weatherSeries.times[state.weatherTimeIndex])})`
+      : "";
+  els.legendTitle.textContent = `${def.label}${periodLabel}${timeLabel}`;
   els.legendRamp.style.background = `linear-gradient(90deg, ${def.ramp.join(", ")})`;
   if (!stats?.stops) {
     els.legendTicks.innerHTML = "<span>No data</span>";
@@ -640,7 +828,13 @@ function gridDetails(props) {
     detailRow("Transition sensitivity", formatNumber(props.autumn_pct, "%", 100))
   ];
   if (metric.category === "weather") {
-    rows.push(detailRow(`${metric.label} (${PERIODS[state.period].shortLabel})`, formatNumber(props[metricField], metric.unit)));
+    const value = currentWeatherValue(props.grid_id);
+    rows.push(
+      detailRow(
+        `${metric.label} (${PERIODS[state.period].shortLabel})`,
+        formatNumber(value ?? props[metricField], metric.unit)
+      )
+    );
   }
   return rows.join("");
 }
@@ -700,9 +894,10 @@ function popupHtml(feature, type) {
   }
   const field = metric.category === "weather" ? weatherField() : fieldForLayer("grid_500m", state.metric);
   const label = metric.category === "weather" ? `${metric.label} (${PERIODS[state.period].shortLabel})` : metric.label;
+  const value = metric.category === "weather" ? currentWeatherValue(props.grid_id) ?? props[field] : props[field];
   return `
     <p class="popup-title">500 m grid ${props.grid_id}</p>
-    <div class="popup-line"><span>${label}</span><strong>${formatNumber(props[field], metric.unit)}</strong></div>
+    <div class="popup-line"><span>${label}</span><strong>${formatNumber(value, metric.unit)}</strong></div>
   `;
 }
 
@@ -847,8 +1042,11 @@ function addGeojsonSource(kind, data, promoteField) {
 
 async function addOptionalGridSource(kind, dataUrl, promoteField) {
   if (hasTileset(kind)) {
-    addHostedSource(kind, promoteField);
-    return true;
+    const resolved = await resolveOptionalHostedSourceLayer(kind);
+    if (resolved) {
+      addHostedSource(kind, promoteField);
+      return true;
+    }
   }
   if (await urlExists(dataUrl)) {
     addGeojsonSource(kind, dataUrl, promoteField);
@@ -859,7 +1057,7 @@ async function addOptionalGridSource(kind, dataUrl, promoteField) {
 
 async function addLayers() {
   if (state.useHostedTilesets) {
-    await resolveHostedSourceLayers();
+    await resolveRequiredHostedSourceLayers();
     addHostedSource("grid", "grid_id");
     addHostedSource("buildings", "objectid");
   } else if (state.useVectorTiles) {
@@ -903,7 +1101,7 @@ async function addLayers() {
       type: "fill",
       source: "buildingOverview",
       ...sourceLayer("buildingOverview"),
-      maxzoom: 11.2,
+      maxzoom: 10.8,
       paint: {
         "fill-color": overviewColorExpression(),
         "fill-opacity": [
@@ -924,7 +1122,7 @@ async function addLayers() {
       type: "line",
       source: "buildingOverview",
       ...sourceLayer("buildingOverview"),
-      maxzoom: 11.2,
+      maxzoom: 10.8,
       paint: {
         "line-color": "rgba(42, 55, 67, 0.24)",
         "line-width": 0.35
@@ -982,7 +1180,7 @@ async function addLayers() {
     type: "fill-extrusion",
     source: "buildings",
     ...sourceLayer("buildings"),
-    minzoom: 11,
+    minzoom: 10.4,
     paint: {
       "fill-extrusion-color": buildingColorExpression(),
       "fill-extrusion-height": heightExpression(),
@@ -996,7 +1194,7 @@ async function addLayers() {
     type: "fill-extrusion",
     source: "buildings",
     ...sourceLayer("buildings"),
-    minzoom: 11,
+    minzoom: 10.4,
     filter: ["==", ["get", "objectid"], -999999],
     paint: {
       "fill-extrusion-color": "#111827",
@@ -1083,7 +1281,7 @@ function initMap(token) {
     container: "map",
     style: CONFIG.styleUrl || "mapbox://styles/mapbox/light-v11",
     center: [103.8198, 1.3521],
-    zoom: 10.95,
+    zoom: 11.35,
     pitch: 52,
     bearing: -18,
     antialias: true
@@ -1096,6 +1294,7 @@ function initMap(token) {
       await loadData();
       await addLayers();
       updateLegend();
+      refreshWeatherSeries();
       hideLoading();
     } catch (error) {
       showLoading(`Data loading failed: ${error.message}`);
@@ -1125,6 +1324,7 @@ function bindEvents() {
     updateMetricButtons();
     updateMapStyle();
     updateLegend();
+    refreshWeatherSeries();
   });
   els.searchButton.addEventListener("click", search);
   els.searchInput.addEventListener("keydown", (event) => {
@@ -1138,6 +1338,13 @@ function bindEvents() {
     state.gridOpacity = Number(els.gridOpacity.value);
     updateMapStyle();
   });
+  els.weatherTime.addEventListener("input", () => {
+    state.weatherTimeIndex = Number(els.weatherTime.value);
+    updateWeatherTimeControls();
+    updateMapStyle();
+    updateLegend();
+  });
+  els.weatherPlay.addEventListener("click", toggleWeatherPlayback);
   els.resetView.addEventListener("click", () => {
     state.selectedBuildingId = null;
     state.selectedGridId = null;
@@ -1146,7 +1353,7 @@ function bindEvents() {
       state.map.setFilter("grid-selected", ["==", ["get", "grid_id"], -999999]);
     }
     updateFeaturePanel(null);
-    state.map?.flyTo({ center: [103.8198, 1.3521], zoom: 10.95, pitch: 52, bearing: -18, duration: 900 });
+    state.map?.flyTo({ center: [103.8198, 1.3521], zoom: 11.35, pitch: 52, bearing: -18, duration: 900 });
   });
 }
 

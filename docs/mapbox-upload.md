@@ -40,11 +40,15 @@ in Mapbox Studio.
 
 ## Mapbox Token
 
-Do not commit unrestricted Mapbox tokens. For local testing, paste a public token in the startup dialog; it is stored
-only in the browser's local storage.
+Do not commit unrestricted Mapbox tokens. This public demo uses a browser-side Mapbox public token; restrict it in
+Mapbox account settings to the production domains before sharing the site:
 
-For a public production site, use a URL-restricted public token scoped to the official site domain, then inject it
-through the deployment pipeline or commit it only after the lab agrees to accept the public-token exposure.
+- `https://urbandt.org/*`
+- `https://www.urbandt.org/*`
+- optional local testing URLs such as `http://127.0.0.1:8765/*`
+
+If the configured token is removed or invalid, the app falls back to the startup dialog and stores the pasted public
+token only in the browser's local storage.
 
 ## Regenerate Upload Layers
 
@@ -56,5 +60,9 @@ python .\scripts\prepare_mapbox_layers.py `
   --buildings-geojson "F:\博士文件\石老师课题组\第四篇小论文-城市能碳计算\1.Mapbox-website\data\buildings_sg.geojson" `
   --wrf-root "F:\博士文件\石老师课题组\第四篇小论文-城市能碳计算\WRF模拟结果文件" `
   --metadata ".\data\metadata.json" `
-  --out-dir ".\mapbox-studio-upload"
+  --out-dir ".\mapbox-studio-upload" `
+  --timeseries-out-dir ".\data\weather-timeseries"
 ```
+
+The `mapbox-studio-upload` files are spatial layers for Mapbox Studio. The `data/weather-timeseries` JSON files are
+used directly by the website for the WRF hourly slider and do not need to be uploaded to Mapbox Studio.

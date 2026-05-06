@@ -1,0 +1,45 @@
+{
+  "periods": {
+    "hot": "Relative hot (May)",
+    "transition": "Transition (Oct)",
+    "cold": "Relative cold (Dec)"
+  },
+  "variables": {
+    "temp": {
+      "label": "2 m temperature",
+      "unit": "degC"
+    },
+    "wind": {
+      "label": "10 m wind speed",
+      "unit": "m/s"
+    },
+    "rh": {
+      "label": "Relative humidity",
+      "unit": "%"
+    },
+    "solar": {
+      "label": "Solar shortwave radiation",
+      "unit": "W/m2"
+    }
+  },
+  "files": {
+    "hot": {
+      "temp": "data/weather-timeseries/hot_temp.json",
+      "wind": "data/weather-timeseries/hot_wind.json",
+      "rh": "data/weather-timeseries/hot_rh.json",
+      "solar": "data/weather-timeseries/hot_solar.json"
+    },
+    "transition": {
+      "temp": "data/weather-timeseries/transition_temp.json",
+      "wind": "data/weather-timeseries/transition_wind.json",
+      "rh": "data/weather-timeseries/transition_rh.json",
+      "solar": "data/weather-timeseries/transition_solar.json"
+    },
+    "cold": {
+      "temp": "data/weather-timeseries/cold_temp.json",
+      "wind": "data/weather-timeseries/cold_wind.json",
+      "rh": "data/weather-timeseries/cold_rh.json",
+      "solar": "data/weather-timeseries/cold_solar.json"
+    }
+  }
+}
