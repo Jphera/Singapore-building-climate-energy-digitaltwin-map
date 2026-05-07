@@ -57,95 +57,139 @@
       <div id="map"></div>
 
       <section class="panel panel-left" aria-label="Map controls">
-        <div class="brand" id="about">
-          <div class="brand-top">
-            <img src="bior_logo.png" alt="BIOR Lab logo" class="bior-logo" />
+        <!-- About tab: brand + project summary only -->
+        <div class="tab-panel active" id="about">
+          <div class="brand">
+            <div class="brand-top">
+              <img src="bior_logo.png" alt="BIOR Lab logo" class="bior-logo" />
+            </div>
+
+            <h1 class="brand-title">
+              <span class="title-highlight">Urban Digital Twins:</span><br />
+              <span class="title-main">
+                A Tool for Urban-Scale Microclimate-Informed Building Energy Analysis
+              </span>
+            </h1>
           </div>
 
-          <h1 class="brand-title">
-            <span class="title-highlight">Urban Digital Twins:</span><br />
-            <span class="title-main">
-              A Tool for Urban-Scale Microclimate-Informed Building Energy Analysis
-            </span>
-          </h1>
-        </div>
-
-        <div class="control-block">
-          <label class="control-label" for="layerMode">Viewing</label>
-          <select id="layerMode">
-            <option value="buildings">Individual building</option>
-            <option value="grid">District level (500 m grid)</option>
-            <option value="combined" selected>Individual building + District</option>
-          </select>
-        </div>
-
-        <div class="control-block">
-          <span class="control-label">Project summary</span>
-          <p class="summary-text">
-            This digital twin integrates building-level energy modeling, urban morphology, measured electricity-use
-            intensity, and WRF-derived microclimate fields to visualize how Singapore's built environment responds to
-            relative hot, cold, and transition climate conditions at both building and 500 m district scales.
-          </p>
-        </div>
-
-        <div class="control-block metric-block" id="buildings">
-          <span class="control-label">Building metadata</span>
-          <div id="buildingMetricButtons" class="segmented compact"></div>
-        </div>
-
-        <div class="control-block metric-block" id="microclimate">
-          <span class="control-label">Weather (WRF results)</span>
-          <div id="weatherButtons" class="segmented compact"></div>
-        </div>
-
-        <div class="control-block">
-          <span class="control-label">Weather period</span>
-          <div id="periodButtons" class="segmented compact three"></div>
-        </div>
-
-        <div id="weatherTimeBlock" class="control-block weather-time-block hidden-block">
-          <div class="control-label-row">
-            <span class="control-label">WRF time</span>
-            <output id="weatherTimeLabel">--</output>
-          </div>
-          <div class="time-row">
-            <input id="weatherTime" type="range" min="0" max="0" value="0" step="1" />
-            <button id="weatherPlay" type="button">Play</button>
+          <div class="control-block">
+            <span class="control-label">Project summary</span>
+            <p class="summary-text">
+              This digital twin integrates building-level energy modeling, urban morphology, measured electricity-use
+              intensity, and WRF-derived microclimate fields to visualize how Singapore's built environment responds to
+              relative hot, cold, and transition climate conditions at both building and 500 m district scales.
+            </p>
           </div>
         </div>
 
-        <div class="control-block metric-block" id="energy">
-          <span class="control-label">Energy Use</span>
-          <div id="energyButtons" class="button-stack"></div>
-        </div>
+        <!-- Buildings tab -->
+        <div class="tab-panel" id="buildings">
+          <div class="control-block">
+            <label class="control-label" for="layerMode">Viewing</label>
+            <select id="layerMode">
+              <option value="buildings">Individual building</option>
+              <option value="grid">District level (500 m grid)</option>
+              <option value="combined" selected>Individual building + District</option>
+            </select>
+          </div>
 
-        <div class="control-block" id="searchTools">
-          <label class="control-label" for="searchInput">Find building or grid</label>
-          <div class="search-row">
-            <input id="searchInput" type="search" placeholder="objectid, source id, or grid id" autocomplete="off" />
-            <button id="searchButton" type="button">Search</button>
+          <div class="control-block metric-block">
+            <span class="control-label">Building metadata</span>
+            <div id="buildingMetricButtons" class="segmented compact"></div>
+          </div>
+
+          <div class="control-block" id="searchTools">
+            <label class="control-label" for="searchInput">Find building or grid</label>
+            <div class="search-row">
+              <input id="searchInput" type="search" placeholder="objectid, source id, or grid id" autocomplete="off" />
+              <button id="searchButton" type="button">Search</button>
+            </div>
+          </div>
+
+          <div class="control-grid">
+            <label>
+              <span class="control-label">3D height</span>
+              <input id="heightScale" type="range" min="0" max="2.5" value="1" step="0.1" />
+            </label>
+            <label>
+              <span class="control-label">Grid opacity</span>
+              <input id="gridOpacity" type="range" min="0" max="0.9" value="0.48" step="0.03" />
+            </label>
+          </div>
+
+          <div class="summary-strip">
+            <div>
+              <strong id="buildingCount">--</strong>
+              <span>buildings</span>
+            </div>
+            <div>
+              <strong id="gridCount">--</strong>
+              <span>grid cells</span>
+            </div>
           </div>
         </div>
 
-        <div class="control-grid">
-          <label>
-            <span class="control-label">3D height</span>
-            <input id="heightScale" type="range" min="0" max="2.5" value="1" step="0.1" />
-          </label>
-          <label>
-            <span class="control-label">Grid opacity</span>
-            <input id="gridOpacity" type="range" min="0" max="0.9" value="0.48" step="0.03" />
-          </label>
+        <!-- Microclimate tab -->
+        <div class="tab-panel" id="microclimate">
+          <div class="control-block">
+            <label class="control-label" for="layerModeMirror">Viewing</label>
+            <select id="layerModeMirror">
+              <option value="buildings">Individual building</option>
+              <option value="grid">District level (500 m grid)</option>
+              <option value="combined" selected>Individual building + District</option>
+            </select>
+          </div>
+
+          <div class="control-block metric-block">
+            <span class="control-label">Weather (WRF results)</span>
+            <div id="weatherButtons" class="segmented compact"></div>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">Weather period</span>
+            <div id="periodButtons" class="segmented compact three"></div>
+          </div>
+
+          <div id="weatherTimeBlock" class="control-block weather-time-block hidden-block">
+            <div class="control-label-row">
+              <span class="control-label">WRF time</span>
+              <output id="weatherTimeLabel">--</output>
+            </div>
+            <div class="time-row">
+              <input id="weatherTime" type="range" min="0" max="0" value="0" step="1" />
+              <button id="weatherPlay" type="button">Play</button>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <label>
+              <span class="control-label">Grid opacity</span>
+              <input id="gridOpacityMicroclimate" type="range" min="0" max="0.9" value="0.48" step="0.03" />
+            </label>
+          </div>
         </div>
 
-        <div class="summary-strip">
-          <div>
-            <strong id="buildingCount">--</strong>
-            <span>buildings</span>
+        <!-- Energy tab -->
+        <div class="tab-panel" id="energy">
+          <div class="control-block">
+            <label class="control-label" for="layerModeEnergy">Viewing</label>
+            <select id="layerModeEnergy">
+              <option value="buildings">Individual building</option>
+              <option value="grid">District level (500 m grid)</option>
+              <option value="combined" selected>Individual building + District</option>
+            </select>
           </div>
-          <div>
-            <strong id="gridCount">--</strong>
-            <span>grid cells</span>
+
+          <div class="control-block metric-block">
+            <span class="control-label">Energy Use</span>
+            <div id="energyButtons" class="button-stack"></div>
+          </div>
+
+          <div class="control-block">
+            <label>
+              <span class="control-label">Grid opacity</span>
+              <input id="gridOpacityEnergy" type="range" min="0" max="0.9" value="0.48" step="0.03" />
+            </label>
           </div>
         </div>
       </section>
@@ -199,5 +243,71 @@
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.js"></script>
     <script src="src/config.js?v=20260506-hourly"></script>
     <script src="src/app.js?v=20260506-hourly"></script>
+
+    <script>
+      document.querySelectorAll(".app-nav-item[href^='#']").forEach((item) => {
+        item.addEventListener("click", (event) => {
+          const targetId = item.getAttribute("href").replace("#", "");
+          const targetPanel = document.getElementById(targetId);
+
+          if (!targetPanel || !targetPanel.classList.contains("tab-panel")) return;
+
+          event.preventDefault();
+
+          document.querySelectorAll(".app-nav-item").forEach((navItem) => {
+            navItem.classList.remove("active");
+          });
+
+          document.querySelectorAll(".tab-panel").forEach((panel) => {
+            panel.classList.remove("active");
+          });
+
+          item.classList.add("active");
+          targetPanel.classList.add("active");
+        });
+      });
+
+      function syncSelect(sourceId, targetId) {
+        const source = document.getElementById(sourceId);
+        const target = document.getElementById(targetId);
+
+        if (!source || !target) return;
+
+        target.value = source.value;
+
+        target.addEventListener("change", () => {
+          source.value = target.value;
+          source.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+
+        source.addEventListener("change", () => {
+          target.value = source.value;
+        });
+      }
+
+      syncSelect("layerMode", "layerModeMirror");
+      syncSelect("layerMode", "layerModeEnergy");
+
+      function syncRange(sourceId, targetId) {
+        const source = document.getElementById(sourceId);
+        const target = document.getElementById(targetId);
+
+        if (!source || !target) return;
+
+        target.value = source.value;
+
+        target.addEventListener("input", () => {
+          source.value = target.value;
+          source.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+
+        source.addEventListener("input", () => {
+          target.value = source.value;
+        });
+      }
+
+      syncRange("gridOpacity", "gridOpacityMicroclimate");
+      syncRange("gridOpacity", "gridOpacityEnergy");
+    </script>
   </body>
 </html>
