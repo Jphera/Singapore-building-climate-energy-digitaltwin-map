@@ -967,3 +967,33 @@ input[type="range"] {
   opacity: 0 !important;
   pointer-events: none !important;
 }
+
+#resetView {
+  appearance: none;
+  border: 1px solid var(--nus-blue);
+  background: var(--nus-blue);
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 12px 22px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 61, 124, 0.12);
+}
+
+#resetView:hover {
+  background: #002e63;
+  border-color: #002e63;
+  color: #ffffff;
+}
+
+#resetView:active {
+  transform: translateY(1px);
+}
+
+#resetView:focus-visible {
+  outline: 3px solid rgba(0, 61, 124, 0.18);
+  outline-offset: 2px;
+}
