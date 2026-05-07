@@ -307,37 +307,20 @@
           targetPanel.classList.add("active");
 
           if (targetId === "buildings") {
-            setTimeout(activateBuildingTypeMetric, 100);
             setTimeout(activateBuildingMode, 100);
+            setTimeout(activateBuildingTypeMetric, 150);
           }
 
           if (targetId === "microclimate") {
             setTimeout(activateMicroclimateGridMode, 100);
           }
+
+          if (targetId === "energy") {
+            setTimeout(activateEnergyBuildingMode, 100);
+            setTimeout(activateFirstEnergyMetric, 150);
+          }
         });
       });
-
-      function syncSelect(sourceId, targetId) {
-        const source = document.getElementById(sourceId);
-        const target = document.getElementById(targetId);
-
-        if (!source || !target) return;
-
-        target.value = source.value;
-
-        target.addEventListener("change", () => {
-          source.value = target.value;
-          source.dispatchEvent(new Event("change", { bubbles: true }));
-        });
-
-        source.addEventListener("change", () => {
-          target.value = source.value;
-        });
-      }
-
-      // Do not sync layerModeMirror with layerMode:
-      // Microclimate should remain aggregated grid-level by default.
-      syncSelect("layerMode", "layerModeEnergy");
 
       function syncRange(sourceId, targetId) {
         const source = document.getElementById(sourceId);
@@ -382,6 +365,20 @@
         }
       }
 
+      function activateEnergyBuildingMode() {
+        const layerMode = document.getElementById("layerMode");
+        const layerModeEnergy = document.getElementById("layerModeEnergy");
+
+        if (layerModeEnergy) {
+          layerModeEnergy.value = "buildings";
+        }
+
+        if (layerMode) {
+          layerMode.value = "buildings";
+          layerMode.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+
       function activateBuildingTypeMetric() {
         const container = document.getElementById("buildingMetricButtons");
         if (!container) return;
@@ -395,6 +392,32 @@
         }
       }
 
+      function activateFirstEnergyMetric() {
+        const energyPanel = document.getElementById("energy");
+        const container = document.getElementById("energyButtons");
+
+        if (!energyPanel || !energyPanel.classList.contains("active")) return;
+        if (!container) return;
+
+        const firstEnergyButton = container.querySelector("button");
+
+        if (firstEnergyButton && !firstEnergyButton.classList.contains("active")) {
+          firstEnergyButton.click();
+        }
+      }
+
+      const layerModeEnergy = document.getElementById("layerModeEnergy");
+      const layerMode = document.getElementById("layerMode");
+
+      if (layerModeEnergy && layerMode) {
+        layerModeEnergy.value = "buildings";
+
+        layerModeEnergy.addEventListener("change", () => {
+          layerMode.value = layerModeEnergy.value;
+          layerMode.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      }
+
       window.addEventListener("load", () => {
         setTimeout(activateBuildingMode, 400);
         setTimeout(activateBuildingTypeMetric, 600);
@@ -402,11 +425,16 @@
 
       document.querySelector('a[href="#buildings"]')?.addEventListener("click", () => {
         setTimeout(activateBuildingMode, 100);
-        setTimeout(activateBuildingTypeMetric, 100);
+        setTimeout(activateBuildingTypeMetric, 150);
       });
 
       document.querySelector('a[href="#microclimate"]')?.addEventListener("click", () => {
         setTimeout(activateMicroclimateGridMode, 100);
+      });
+
+      document.querySelector('a[href="#energy"]')?.addEventListener("click", () => {
+        setTimeout(activateEnergyBuildingMode, 100);
+        setTimeout(activateFirstEnergyMetric, 150);
       });
 
       const buildingMetricButtons = document.getElementById("buildingMetricButtons");
@@ -416,6 +444,18 @@
         });
 
         observer.observe(buildingMetricButtons, {
+          childList: true,
+          subtree: true
+        });
+      }
+
+      const energyButtons = document.getElementById("energyButtons");
+      if (energyButtons) {
+        const energyObserver = new MutationObserver(() => {
+          activateFirstEnergyMetric();
+        });
+
+        energyObserver.observe(energyButtons, {
           childList: true,
           subtree: true
         });
