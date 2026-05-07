@@ -1,23 +1,13 @@
 :root {
-  --ink: #142033;
-  --muted: #5f6b7a;
-  --line: rgba(0, 61, 124, 0.14);
-
-  --panel: rgba(255, 255, 255, 0.94);
-  --panel-strong: rgba(255, 255, 255, 0.98);
-
-  /* NUS-inspired palette */
-  --nus-blue: #003d7c;
-  --nus-blue-dark: #002b5c;
-  --nus-blue-soft: rgba(0, 61, 124, 0.08);
-  --nus-orange: #ef7c00;
-  --nus-orange-soft: rgba(239, 124, 0, 0.12);
-
-  --accent: var(--nus-blue);
-  --accent-2: var(--nus-orange);
+  --ink: #17212b;
+  --muted: #5e6b75;
+  --line: rgba(29, 43, 55, 0.14);
+  --panel: rgba(255, 255, 255, 0.86);
+  --panel-strong: rgba(255, 255, 255, 0.96);
+  --accent: #0f9d8f;
+  --accent-2: #d98221;
   --danger: #d94b3d;
-
-  --shadow: 0 18px 60px rgba(20, 36, 58, 0.16);
+  --shadow: 0 18px 60px rgba(39, 55, 70, 0.18);
   --sidebar-width: 420px;
 
   font-family:
@@ -39,7 +29,7 @@ body {
 
 body {
   color: var(--ink);
-  background: #eef3f7;
+  background: #eef1f2;
 }
 
 button,
@@ -49,51 +39,39 @@ select {
 }
 
 button {
-  border: 1px solid rgba(0, 61, 124, 0.18);
+  border: 1px solid var(--line);
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 6px;
   min-height: 36px;
   padding: 0 12px;
   cursor: pointer;
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.18s ease;
 }
 
-button:hover {
-  border-color: rgba(0, 61, 124, 0.42);
-  background: rgba(0, 61, 124, 0.06);
-}
-
+button:hover,
 button.active {
-  border-color: rgba(239, 124, 0, 0.8);
-  background: var(--nus-orange);
-  color: var(--nus-blue);
-  font-weight: 650;
+  border-color: rgba(15, 157, 143, 0.68);
+  background: rgba(15, 157, 143, 0.12);
 }
 
 input,
 select {
   width: 100%;
   min-height: 38px;
-  border: 1px solid rgba(0, 61, 124, 0.18);
-  border-radius: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.82);
   padding: 0 10px;
   outline: none;
 }
 
 input:focus,
 select:focus {
-  border-color: var(--nus-blue);
-  box-shadow: 0 0 0 3px rgba(0, 61, 124, 0.08);
+  border-color: var(--accent);
 }
 
-/* Main two-column desktop layout */
+/* Main two-column layout */
 #app {
   position: fixed;
   inset: 0;
@@ -103,10 +81,10 @@ select:focus {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: #eef3f7;
+  background: #eef1f2;
 }
 
-/* Map occupies the right column only */
+/* Map only occupies the right column */
 #map {
   position: relative;
   grid-column: 2;
@@ -131,16 +109,15 @@ select:focus {
   width: var(--sidebar-width);
   height: 100vh;
   max-height: none;
-  padding: 24px 24px 28px;
+  padding: 22px;
   overflow-y: auto;
   border-top: 0;
   border-left: 0;
   border-bottom: 0;
-  border-right: 1px solid rgba(0, 61, 124, 0.16);
+  border-right: 1px solid var(--line);
   border-radius: 0;
   box-shadow: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 251, 253, 0.97));
+  background: rgba(255, 255, 255, 0.94);
 }
 
 /* Right information panel remains floating on the map */
@@ -150,11 +127,10 @@ select:focus {
   bottom: 24px;
   width: min(388px, calc(100vw - var(--sidebar-width) - 48px));
   max-height: calc(100vh - 48px);
-  padding: 18px;
+  padding: 16px;
   overflow: auto;
-  border-radius: 10px;
+  border-radius: 0;
   box-shadow: var(--shadow);
-  background: rgba(255, 255, 255, 0.96);
 }
 
 .brand h1,
@@ -166,11 +142,9 @@ select:focus {
 }
 
 .brand h1 {
-  color: var(--nus-blue-dark);
   font-size: clamp(23px, 2.5vw, 34px);
-  line-height: 1.04;
-  max-width: 360px;
-  font-weight: 800;
+  line-height: 1.02;
+  max-width: 340px;
 }
 
 .subtitle,
@@ -190,15 +164,15 @@ select:focus {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.48;
 }
 
 .eyebrow {
-  margin: 0 0 8px;
-  color: var(--nus-orange);
+  margin: 0 0 7px;
+  color: var(--accent);
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -219,11 +193,11 @@ select:focus {
 .control-label {
   display: block;
   margin-bottom: 7px;
-  color: #526173;
+  color: var(--muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
 }
 
 .control-label-row {
@@ -238,9 +212,9 @@ select:focus {
 }
 
 .control-label-row output {
-  color: var(--nus-blue-dark);
+  color: var(--ink);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 650;
   text-align: right;
 }
 
@@ -276,7 +250,7 @@ select:focus {
 
 .button-stack button {
   justify-content: start;
-  min-height: 38px;
+  min-height: 36px;
   text-align: left;
 }
 
@@ -306,7 +280,7 @@ select:focus {
 
 input[type="range"] {
   padding: 0;
-  accent-color: var(--nus-blue);
+  accent-color: var(--accent);
 }
 
 .summary-strip {
@@ -317,15 +291,14 @@ input[type="range"] {
 }
 
 .summary-strip div {
-  border: 1px solid rgba(0, 61, 124, 0.12);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 10px;
-  background: rgba(0, 61, 124, 0.04);
+  background: rgba(246, 248, 249, 0.82);
 }
 
 .summary-strip strong {
   display: block;
-  color: var(--nus-blue-dark);
   font-size: 22px;
 }
 
@@ -343,7 +316,6 @@ input[type="range"] {
 
 .legend h2,
 .feature-card h2 {
-  color: var(--nus-blue-dark);
   font-size: 18px;
   line-height: 1.25;
 }
@@ -352,7 +324,7 @@ input[type="range"] {
   height: 12px;
   border-radius: 999px;
   margin-top: 14px;
-  border: 1px solid rgba(0, 61, 124, 0.16);
+  border: 1px solid rgba(29, 43, 55, 0.14);
 }
 
 .legend-ticks {
@@ -371,9 +343,9 @@ input[type="range"] {
 }
 
 .type-group {
-  border: 1px solid rgba(0, 61, 124, 0.12);
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(246, 248, 249, 0.78);
+  background: rgba(246, 248, 249, 0.72);
   overflow: hidden;
 }
 
@@ -383,8 +355,7 @@ input[type="range"] {
   align-items: center;
   gap: 8px;
   padding: 9px 10px;
-  border-bottom: 1px solid rgba(0, 61, 124, 0.12);
-  color: var(--nus-blue-dark);
+  border-bottom: 1px solid var(--line);
   font-size: 13px;
 }
 
@@ -414,7 +385,7 @@ input[type="range"] {
 }
 
 .type-swatch-row:hover {
-  background: rgba(0, 61, 124, 0.06);
+  background: rgba(15, 157, 143, 0.08);
 }
 
 .type-swatch-row strong {
@@ -462,11 +433,9 @@ input[type="range"] {
 
 .notes {
   margin-top: 14px;
-  color: var(--muted);
   font-size: 12px;
 }
 
-/* Token dialog */
 .token-dialog {
   position: fixed;
   inset: 0;
@@ -497,7 +466,6 @@ input[type="range"] {
   margin-top: 12px;
 }
 
-/* Loading pill centered over the map area */
 .loading {
   position: fixed;
   left: calc(var(--sidebar-width) + (100vw - var(--sidebar-width)) / 2);
@@ -516,19 +484,18 @@ input[type="range"] {
   display: none;
 }
 
-/* Mapbox popup */
 .mapboxgl-popup-content {
   min-width: 220px;
-  border: 1px solid rgba(0, 61, 124, 0.14);
+  border: 1px solid rgba(29, 43, 55, 0.14);
   border-radius: 8px;
   color: var(--ink);
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: var(--shadow);
 }
 
 .popup-title {
   margin: 0 0 8px;
-  color: var(--nus-blue);
+  color: var(--accent);
   font-weight: 750;
 }
 
@@ -547,24 +514,15 @@ input[type="range"] {
 /* Mapbox attribution customization */
 .bior-attribution {
   font-weight: 700;
-  color: var(--nus-blue);
+  color: #1f2937;
   text-decoration: none;
 }
 
 .bior-attribution:hover {
-  color: var(--nus-orange);
   text-decoration: underline;
 }
 
-.mapboxgl-ctrl-attrib {
-  color: #314154;
-  background: rgba(255, 255, 255, 0.86) !important;
-  border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(20, 36, 58, 0.08);
-}
-
 .mapboxgl-ctrl-attrib a {
-  color: var(--nus-blue);
   font-weight: 600;
 }
 
@@ -577,17 +535,7 @@ input[type="range"] {
   right: 12px;
 }
 
-/* Optional: make map controls feel closer to the NUS style */
-.mapboxgl-ctrl-group {
-  border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgba(20, 36, 58, 0.12) !important;
-}
-
-.mapboxgl-ctrl-group button {
-  border-radius: 0;
-}
-
-/* Medium screens */
+/* Responsive layout */
 @media (max-width: 1200px) {
   :root {
     --sidebar-width: 380px;
@@ -595,7 +543,7 @@ input[type="range"] {
 
   .panel-left {
     width: var(--sidebar-width);
-    padding: 20px;
+    padding: 18px;
   }
 
   .panel-right {
@@ -607,7 +555,6 @@ input[type="range"] {
   }
 }
 
-/* Mobile layout: stack content vertically to avoid overlapping panels */
 @media (max-width: 860px) {
   html,
   body {
@@ -627,7 +574,15 @@ input[type="range"] {
     height: auto;
     min-height: 100vh;
     overflow: visible;
-    background: #eef3f7;
+    background: #eef1f2;
+  }
+
+  #map {
+    position: relative;
+    order: 2;
+    width: 100%;
+    height: 62vh;
+    min-height: 420px;
   }
 
   .panel {
@@ -648,17 +603,7 @@ input[type="range"] {
     overflow: visible;
     border: 0;
     border-bottom: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.98);
-  }
-
-  #map {
-    position: relative;
-    order: 2;
-    grid-column: auto;
-    grid-row: auto;
-    width: 100%;
-    height: 62vh;
-    min-height: 420px;
+    background: rgba(255, 255, 255, 0.96);
   }
 
   .panel-right {
@@ -668,13 +613,11 @@ input[type="range"] {
     bottom: auto;
     width: 100%;
     max-height: none;
-    padding: 22px 20px 28px;
+    padding: 20px;
     overflow: visible;
     border: 0;
     border-top: 1px solid var(--line);
-    border-radius: 0;
-    box-shadow: none;
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(255, 255, 255, 0.96);
   }
 
   .brand h1 {
@@ -720,41 +663,4 @@ input[type="range"] {
   .mapboxgl-ctrl-bottom-right {
     right: 8px;
   }
-}
-
-/* Brand logo and title */
-.brand-top {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 18px;
-}
-
-.bior-logo {
-  display: block;
-  width: 500px;
-  max-width: 100%;
-  height: auto;
-  object-fit: contain;
-}
-
-.brand-title {
-  margin: 0;
-  line-height: 1.05;
-}
-
-.title-highlight {
-  display: inline-block;
-  color: #ef7c00; /* NUS Orange */
-  font-size: clamp(24px, 2.8vw, 40px);
-  font-weight: 700;
-  line-height: 1.05;
-}
-
-.title-main {
-  display: inline-block;
-  color: #003d7c; /* NUS Blue */
-  font-size: clamp(20px, 2.1vw, 30px);
-  font-weight: 600;
-  line-height: 1.12;
 }
