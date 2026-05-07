@@ -95,7 +95,7 @@
             <p class="summary-text">to be added</p>
           </div>
 
-          <!-- Hidden default spatial resolution for app.js compatibility -->
+          <!-- Hidden default spatial resolution for buildings: building-level only -->
           <select
             id="layerMode"
             class="hidden-control"
@@ -157,14 +157,18 @@
             <p class="summary-text">to be added</p>
           </div>
 
-          <div class="control-block">
-            <label class="control-label" for="layerModeMirror">Spatial resolution</label>
-            <select id="layerModeMirror">
-              <option value="buildings" selected>Individual buildings</option>
-              <option value="grid">Aggregated grid cells (500 m × 500 m)</option>
-              <option value="combined">Individual buildings + aggregated grid cells</option>
-            </select>
-          </div>
+          <!-- Hidden spatial resolution for microclimate: WRF results are grid-level only -->
+          <select
+            id="layerModeMirror"
+            class="hidden-control"
+            aria-hidden="true"
+            tabindex="-1"
+            style="display: none;"
+          >
+            <option value="buildings">Individual buildings</option>
+            <option value="grid" selected>Aggregated grid cells (500 m × 500 m)</option>
+            <option value="combined">Individual buildings + aggregated grid cells</option>
+          </select>
 
           <div class="control-block metric-block">
             <span class="control-label">Weather (WRF results)</span>
@@ -301,6 +305,15 @@
 
           item.classList.add("active");
           targetPanel.classList.add("active");
+
+          if (targetId === "buildings") {
+            setTimeout(activateBuildingTypeMetric, 100);
+            setTimeout(activateBuildingMode, 100);
+          }
+
+          if (targetId === "microclimate") {
+            setTimeout(activateMicroclimateGridMode, 100);
+          }
         });
       });
 
@@ -322,7 +335,8 @@
         });
       }
 
-      syncSelect("layerMode", "layerModeMirror");
+      // Do not sync layerModeMirror with layerMode:
+      // Microclimate should remain aggregated grid-level by default.
       syncSelect("layerMode", "layerModeEnergy");
 
       function syncRange(sourceId, targetId) {
@@ -346,6 +360,28 @@
       syncRange("gridOpacity", "gridOpacityMicroclimate");
       syncRange("gridOpacity", "gridOpacityEnergy");
 
+      function activateBuildingMode() {
+        const layerMode = document.getElementById("layerMode");
+        if (!layerMode) return;
+
+        layerMode.value = "buildings";
+        layerMode.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      function activateMicroclimateGridMode() {
+        const layerMode = document.getElementById("layerMode");
+        const layerModeMirror = document.getElementById("layerModeMirror");
+
+        if (layerModeMirror) {
+          layerModeMirror.value = "grid";
+        }
+
+        if (layerMode) {
+          layerMode.value = "grid";
+          layerMode.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
+
       function activateBuildingTypeMetric() {
         const container = document.getElementById("buildingMetricButtons");
         if (!container) return;
@@ -360,11 +396,17 @@
       }
 
       window.addEventListener("load", () => {
+        setTimeout(activateBuildingMode, 400);
         setTimeout(activateBuildingTypeMetric, 600);
       });
 
       document.querySelector('a[href="#buildings"]')?.addEventListener("click", () => {
+        setTimeout(activateBuildingMode, 100);
         setTimeout(activateBuildingTypeMetric, 100);
+      });
+
+      document.querySelector('a[href="#microclimate"]')?.addEventListener("click", () => {
+        setTimeout(activateMicroclimateGridMode, 100);
       });
 
       const buildingMetricButtons = document.getElementById("buildingMetricButtons");
