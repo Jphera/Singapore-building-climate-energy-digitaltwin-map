@@ -10,8 +10,8 @@ Upload these files in Mapbox Studio Data manager:
 
 1. `mapbox-studio-upload/03_weather_500m.geojson`
 2. `mapbox-studio-upload/04_building_overview_500m.geojson`
-3. `mapbox-studio-upload/05_buildings_energy_weekly.zip`
-4. `mapbox-studio-upload/06_grid_energy_weekly.zip`
+3. `mapbox-studio-upload/05_buildings_energy_weekly.geojson`
+4. `mapbox-studio-upload/06_grid_energy_weekly.geojson`
 
 Recommended tileset names:
 
@@ -93,5 +93,6 @@ python .\scripts\prepare_energy_weekly_layers.py `
 ```
 
 Copy the generated `05_buildings_energy_weekly.geojson` and `06_grid_energy_weekly.geojson` to your local
-`1.Mapbox-website\mapbox-studio-upload` folder and upload the `.zip` versions to Mapbox Studio. These files contain
-raw building-level values, so keep them out of GitHub.
+`1.Mapbox-website\mapbox-studio-upload` folder and upload the `.geojson` files directly to Mapbox Studio. Do not zip
+GeoJSON files for Mapbox Studio uploads; zipped uploads are interpreted as Shapefile archives and must contain `.shp`
+sidecar files. These GeoJSON files contain raw building-level values, so keep them out of GitHub.
