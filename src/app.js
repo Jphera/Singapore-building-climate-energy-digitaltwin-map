@@ -259,6 +259,19 @@ const TYPE_COLORS = {
   supermarket: "#bae6fd"
 };
 
+const REGION_GROUP_LABELS = {
+  "Central Region": "Central Region",
+  "East Region": "East Region",
+  "North Region": "North Region",
+  "North-East Region": "North-East Region",
+  "West Region": "West Region",
+  MK: "Mukim districts (MK)",
+  TS: "Town subdivision districts (TS)",
+  Other: "Other districts"
+};
+
+const REGION_GROUP_ORDER = ["Central Region", "East Region", "North Region", "North-East Region", "West Region", "MK", "TS", "Other"];
+
 const state = {
   map: null,
   metadata: null,
@@ -364,12 +377,60 @@ function compactCount(value) {
   return Number(value || 0).toLocaleString();
 }
 
+function htmlSafe(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function regionFeatures() {
   return state.regions?.features || [];
 }
 
+function regionId(feature) {
+  return String(feature?.properties?.region_id || "");
+}
+
+function regionName(feature) {
+  return feature?.properties?.region_name || regionId(feature);
+}
+
+function regionGroupId(feature) {
+  const explicitGroup = feature?.properties?.region_group;
+  if (explicitGroup) return explicitGroup;
+  const id = regionId(feature).toUpperCase();
+  if (id.startsWith("MK")) return "MK";
+  if (id.startsWith("TS")) return "TS";
+  return "Other";
+}
+
+function regionGroups() {
+  const groups = new Map();
+  regionFeatures().forEach((feature) => {
+    const groupId = regionGroupId(feature);
+    if (!groups.has(groupId)) groups.set(groupId, []);
+    groups.get(groupId).push(regionId(feature));
+  });
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => {
+      const aIndex = REGION_GROUP_ORDER.includes(a) ? REGION_GROUP_ORDER.indexOf(a) : REGION_GROUP_ORDER.length;
+      const bIndex = REGION_GROUP_ORDER.includes(b) ? REGION_GROUP_ORDER.indexOf(b) : REGION_GROUP_ORDER.length;
+      return aIndex - bIndex;
+    })
+    .map(([id, ids]) => ({ id, ids, label: REGION_GROUP_LABELS[id] || id }));
+}
+
+function regionIdsForGroup(groupId) {
+  return regionFeatures()
+    .filter((feature) => regionGroupId(feature) === groupId)
+    .map(regionId);
+}
+
 function regionIds() {
-  return regionFeatures().map((feature) => feature.properties.region_id);
+  return regionFeatures().map(regionId);
 }
 
 function selectedRegionCount() {
@@ -382,11 +443,11 @@ function allRegionsSelected() {
 }
 
 function regionFalseFilter() {
-  return ["==", 1, 0];
+  return ["==", ["get", "region_id"], "__none__"];
 }
 
 function selectedRegionFeatureCollection() {
-  const selected = regionFeatures().filter((feature) => state.selectedRegionIds.has(feature.properties.region_id));
+  const selected = regionFeatures().filter((feature) => state.selectedRegionIds.has(regionId(feature)));
   return { type: "FeatureCollection", features: selected };
 }
 
@@ -408,6 +469,11 @@ function selectedRegionLayerFilterExpression() {
   return ["in", ["get", "region_id"], ["literal", Array.from(state.selectedRegionIds)]];
 }
 
+function regionLabelFilterExpression() {
+  if (!regionFeatures().length || !selectedRegionCount()) return regionFalseFilter();
+  return ["in", ["get", "region_id"], ["literal", Array.from(state.selectedRegionIds)]];
+}
+
 function updateRegionFilterSummary() {
   if (!els.regionFilterSummary) return;
   const total = regionFeatures().length;
@@ -415,11 +481,11 @@ function updateRegionFilterSummary() {
   if (!total) {
     els.regionFilterSummary.textContent = "Loading regions...";
   } else if (count === total) {
-    els.regionFilterSummary.textContent = `All regions (${total})`;
+    els.regionFilterSummary.textContent = `All areas (${total})`;
   } else if (!count) {
-    els.regionFilterSummary.textContent = "No regions selected";
+    els.regionFilterSummary.textContent = "No areas selected";
   } else {
-    els.regionFilterSummary.textContent = `${count} of ${total} regions`;
+    els.regionFilterSummary.textContent = `${count} of ${total} areas`;
   }
 }
 
@@ -429,32 +495,117 @@ function renderRegionFilter() {
     updateRegionFilterSummary();
     return;
   }
-  state.selectedRegionIds = new Set(features.map((feature) => feature.properties.region_id));
-  els.regionFilterList.innerHTML = features
-    .map((feature) => {
-      const id = feature.properties.region_id;
-      const name = feature.properties.region_name || id;
+  state.selectedRegionIds = new Set(features.map(regionId));
+  const groupMarkup = regionGroups()
+    .map((group) => {
       return `
-        <label class="region-filter-option">
-          <input type="checkbox" value="${id}" checked />
-          <span>${name}</span>
+        <label class="region-filter-option region-filter-group-option">
+          <input type="checkbox" data-region-group="${htmlSafe(group.id)}" checked />
+          <span>${htmlSafe(group.label)}</span>
+          <strong>${group.ids.length}</strong>
         </label>
       `;
     })
     .join("");
+  const districtMarkup = features
+    .map((feature) => {
+      const id = regionId(feature);
+      const name = regionName(feature);
+      return `
+        <label class="region-filter-option">
+          <input type="checkbox" value="${htmlSafe(id)}" data-region-id="${htmlSafe(id)}" checked />
+          <span>${htmlSafe(name)}</span>
+        </label>
+      `;
+    })
+    .join("");
+  els.regionFilterList.innerHTML = `
+    <div class="region-filter-section">
+      <div class="region-filter-section-title">Major regions</div>
+      ${groupMarkup}
+    </div>
+    <div class="region-filter-section">
+      <div class="region-filter-section-title">Planning areas</div>
+      ${districtMarkup}
+    </div>
+  `;
   updateRegionFilterSummary();
 }
 
 function syncRegionCheckboxes() {
   if (!els.regionFilterList) return;
-  els.regionFilterList.querySelectorAll("input[type='checkbox']").forEach((input) => {
+  els.regionFilterList.querySelectorAll("input[data-region-id]").forEach((input) => {
     input.checked = state.selectedRegionIds.has(input.value);
+  });
+  els.regionFilterList.querySelectorAll("input[data-region-group]").forEach((input) => {
+    const ids = regionIdsForGroup(input.dataset.regionGroup);
+    const checkedCount = ids.filter((id) => state.selectedRegionIds.has(id)).length;
+    input.checked = ids.length > 0 && checkedCount === ids.length;
+    input.indeterminate = checkedCount > 0 && checkedCount < ids.length;
   });
   updateRegionFilterSummary();
 }
 
 function shouldShowRegionOverlay() {
   return regionFeatures().length > 0 && selectedRegionCount() > 0 && !allRegionsSelected() && state.mode !== "grid";
+}
+
+function shouldShowRegionLabels() {
+  return regionFeatures().length > 0 && selectedRegionCount() > 0 && state.mode !== "grid";
+}
+
+function expandBoundsWithCoordinates(coordinates, bounds) {
+  if (!Array.isArray(coordinates)) return;
+  if (typeof coordinates[0] === "number" && typeof coordinates[1] === "number") {
+    const lng = coordinates[0];
+    const lat = coordinates[1];
+    if (Number.isFinite(lng) && Number.isFinite(lat)) {
+      bounds[0] = Math.min(bounds[0], lng);
+      bounds[1] = Math.min(bounds[1], lat);
+      bounds[2] = Math.max(bounds[2], lng);
+      bounds[3] = Math.max(bounds[3], lat);
+    }
+    return;
+  }
+  coordinates.forEach((child) => expandBoundsWithCoordinates(child, bounds));
+}
+
+function boundsForRegionFeatures(features) {
+  const bounds = [Infinity, Infinity, -Infinity, -Infinity];
+  features.forEach((feature) => expandBoundsWithCoordinates(feature.geometry?.coordinates, bounds));
+  if (bounds.some((value) => !Number.isFinite(value))) return null;
+  if (bounds[0] === bounds[2]) {
+    bounds[0] -= 0.002;
+    bounds[2] += 0.002;
+  }
+  if (bounds[1] === bounds[3]) {
+    bounds[1] -= 0.002;
+    bounds[3] += 0.002;
+  }
+  return [
+    [bounds[0], bounds[1]],
+    [bounds[2], bounds[3]]
+  ];
+}
+
+function focusRegionIds(ids, maxZoom = 13.8) {
+  if (!state.map || !ids.length) return;
+  const idsSet = new Set(ids);
+  const features = regionFeatures().filter((feature) => idsSet.has(regionId(feature)));
+  const bounds = boundsForRegionFeatures(features);
+  if (!bounds) return;
+  const isCompact = window.innerWidth < 900;
+  state.map.fitBounds(bounds, {
+    padding: {
+      top: 76,
+      bottom: 76,
+      left: isCompact ? 42 : 470,
+      right: window.innerWidth > 1120 ? 420 : 42
+    },
+    maxZoom,
+    duration: 850,
+    essential: true
+  });
 }
 
 function applyRegionFilter() {
@@ -470,6 +621,10 @@ function applyRegionFilter() {
       state.map.setFilter(layer, regionLayerFilter);
       state.map.setLayoutProperty(layer, "visibility", shouldShowRegionOverlay() ? "visible" : "none");
     });
+    if (state.map.getLayer("region-filter-label")) {
+      state.map.setFilter("region-filter-label", regionLabelFilterExpression());
+      state.map.setLayoutProperty("region-filter-label", "visibility", shouldShowRegionLabels() ? "visible" : "none");
+    }
   } catch (error) {
     console.warn("Region filter could not be applied", error);
   }
@@ -1497,7 +1652,7 @@ async function addLayers() {
       layout: { visibility: "none" },
       paint: {
         "fill-color": "#003d7c",
-        "fill-opacity": 0.08
+        "fill-opacity": 0.16
       }
     });
     state.map.addLayer({
@@ -1508,8 +1663,8 @@ async function addLayers() {
       layout: { visibility: "none" },
       paint: {
         "line-color": "#003d7c",
-        "line-width": 1.4,
-        "line-opacity": 0.72
+        "line-width": 1.8,
+        "line-opacity": 0.82
       }
     });
   }
@@ -1566,6 +1721,29 @@ async function addLayers() {
       "fill-extrusion-opacity": 0.92
     }
   });
+  if (state.regions) {
+    state.map.addLayer({
+      id: "region-filter-label",
+      type: "symbol",
+      source: "regions",
+      minzoom: 10.2,
+      filter: regionFalseFilter(),
+      layout: {
+        visibility: "none",
+        "text-field": ["get", "region_name"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 10.2, 10, 12.5, 13, 15, 15],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false
+      },
+      paint: {
+        "text-color": "#003d7c",
+        "text-halo-color": "rgba(255, 255, 255, 0.92)",
+        "text-halo-width": 1.8,
+        "text-halo-blur": 0.2
+      }
+    });
+  }
 
   state.popup = new mapboxgl.Popup({
     closeButton: false,
@@ -1740,10 +1918,24 @@ function bindEvents() {
   els.regionFilterList?.addEventListener("change", (event) => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement) || input.type !== "checkbox") return;
-    if (input.checked) state.selectedRegionIds.add(input.value);
-    else state.selectedRegionIds.delete(input.value);
-    updateRegionFilterSummary();
+    const groupId = input.dataset.regionGroup;
+    if (groupId) {
+      const ids = regionIdsForGroup(groupId);
+      ids.forEach((id) => {
+        if (input.checked) state.selectedRegionIds.add(id);
+        else state.selectedRegionIds.delete(id);
+      });
+      syncRegionCheckboxes();
+      applyRegionFilter();
+      if (input.checked) focusRegionIds(ids, 11.9);
+      return;
+    }
+    const id = input.dataset.regionId || input.value;
+    if (input.checked) state.selectedRegionIds.add(id);
+    else state.selectedRegionIds.delete(id);
+    syncRegionCheckboxes();
     applyRegionFilter();
+    if (input.checked) focusRegionIds([id], 13.8);
   });
   els.regionSelectAll?.addEventListener("click", () => {
     state.selectedRegionIds = new Set(regionIds());
