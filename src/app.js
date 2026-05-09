@@ -2,16 +2,16 @@ const CONFIG = window.SG_ENERGY_MAP_CONFIG || {};
 const TOKEN_STORAGE_KEY = "sg-energy-mapbox-token";
 
 const PERIODS = {
-  hot: { label: "Relatively hot season (May)", shortLabel: "Hot" },
-  cold: { label: "Relatively cold season (Dec)", shortLabel: "Cold" },
-  transition: { label: "Transitional season (Oct)", shortLabel: "Transition" }
+  hot: { label: "Relative hot season (May)", shortLabel: "Relative hot" },
+  cold: { label: "Relative cold season (Dec)", shortLabel: "Relative cold" },
+  transition: { label: "Transition season (Oct)", shortLabel: "Transition" }
 };
 
 const WEATHER_VARIABLES = {
-  temp: { label: "2 m temperature", shortLabel: "Temperature", unit: "degC", suffix: "c" },
-  wind: { label: "10 m wind speed", shortLabel: "Wind", unit: "m/s", suffix: "ms" },
-  rh: { label: "Relative humidity", shortLabel: "RH", unit: "%", suffix: "pct" },
-  solar: { label: "Solar shortwave radiation", shortLabel: "Solar", unit: "W/m2", suffix: "wm2" }
+  temp: { label: "T2m air temperature", shortLabel: "T2m", unit: "degC", suffix: "c" },
+  wind: { label: "Wind10m speed", shortLabel: "Wind10m", unit: "m/s", suffix: "ms" },
+  rh: { label: "RH2m relative humidity", shortLabel: "RH2m", unit: "%", suffix: "pct" },
+  solar: { label: "SWDOWN shortwave radiation", shortLabel: "SWDOWN", unit: "W/m2", suffix: "wm2" }
 };
 
 const ENERGY_WEEKLY_RAMP = ["#edf7fb", "#b7dbe8", "#70b6cf", "#2f86b2", "#0d4f78"];
@@ -690,11 +690,24 @@ function buildInterpolateExpression(layerName, metric, fallbackColor = "rgba(144
   return buildColorExpressionFromInput(metricInputExpression(layerName, metric), stats, def.ramp, fallbackColor);
 }
 
-function buildColorExpressionFromInput(inputExpression, stats, ramp, fallbackColor) {
-  if (!inputExpression || !stats?.stops?.length) return fallbackColor;
-  const interpolate = ["interpolate", ["linear"], ["var", "weather_value"]];
+function colorStopPairs(stats, ramp) {
+  if (!stats?.stops?.length) return [];
+  const pairs = [];
   stats.stops.forEach((stop, index) => {
-    interpolate.push(stop, ramp[index] || ramp[ramp.length - 1]);
+    const numeric = Number(stop);
+    if (!Number.isFinite(numeric)) return;
+    if (pairs.length && numeric <= pairs[pairs.length - 1].stop) return;
+    pairs.push({ stop: numeric, color: ramp[index] || ramp[ramp.length - 1] });
+  });
+  return pairs;
+}
+
+function buildColorExpressionFromInput(inputExpression, stats, ramp, fallbackColor) {
+  const pairs = colorStopPairs(stats, ramp);
+  if (!inputExpression || !pairs.length) return fallbackColor;
+  const interpolate = ["interpolate", ["linear"], ["var", "weather_value"]];
+  pairs.forEach(({ stop, color }) => {
+    interpolate.push(stop, color);
   });
   return [
     "let",
@@ -796,7 +809,7 @@ function populateMetricSelect(select, keys) {
 function initMetricButtons() {
   [
     [els.buildingMetricButtons, ["building_type", "height_m"]],
-    [els.weatherButtons, ["weather_wind", "weather_temp", "weather_rh", "weather_solar"]],
+    [els.weatherButtons, ["weather_temp", "weather_wind", "weather_rh", "weather_solar"]],
     [els.measuredEnergyButtons, ["eui_2023"]]
   ].forEach(([container, keys]) => {
     if (!container) return;
@@ -958,14 +971,17 @@ function updateLegend() {
     def.category === "weather" && state.weatherSeries
       ? ` (${formatWeatherTime(state.weatherSeries.times[state.weatherTimeIndex])})`
       : "";
-  els.legendTitle.textContent = `${def.label}${periodLabel}${timeLabel}`;
-  els.legendRamp.style.background = `linear-gradient(90deg, ${def.ramp.join(", ")})`;
-  if (!stats?.stops) {
+  const pairs = colorStopPairs(stats, def.ramp);
+  if (!pairs.length) {
+    els.legendTitle.textContent = `${def.label}${periodLabel}${timeLabel}`;
+    els.legendRamp.style.background = `linear-gradient(90deg, ${def.ramp.join(", ")})`;
     els.legendTicks.innerHTML = "<span>No data</span>";
     return;
   }
-  els.legendTicks.innerHTML = stats.stops
-    .map((stop) => `<span>${formatNumber(stop, def.unit, metricDisplayScale())}</span>`)
+  els.legendTitle.textContent = `${def.label}${periodLabel}${timeLabel}`;
+  els.legendRamp.style.background = `linear-gradient(90deg, ${pairs.map(({ color }) => color).join(", ")})`;
+  els.legendTicks.innerHTML = pairs
+    .map(({ stop }) => `<span>${formatNumber(stop, def.unit, metricDisplayScale())}</span>`)
     .join("");
 }
 
