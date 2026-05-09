@@ -15,7 +15,7 @@ const WEATHER_VARIABLES = {
 };
 
 const ENERGY_WEEKLY_RAMP = ["#edf7fb", "#b7dbe8", "#70b6cf", "#2f86b2", "#0d4f78"];
-const ENERGY_DIFFERENCE_RAMP = ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"];
+const ENERGY_DIFFERENCE_RAMP = ["#2166ac", "#67a9cf", "#f7f7f7", "#ef8a62", "#b2182b"];
 
 const ENERGY_SIMULATION_METRICS = [
   "energy_hot",
@@ -83,7 +83,8 @@ const METRICS = {
     shortLabel: "Relatively cold season (Dec, non-microclimate)",
     category: "energy",
     unit: "kWh",
-    fieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "winter_energy_kwh" },
+    fieldByLayer: { buildings: "cold_tmy_kwh", grid_500m: "cold_tmy_kwh" },
+    fallbackFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "winter_energy_kwh" },
     ramp: ENERGY_WEEKLY_RAMP
   },
   energy_hot: {
@@ -91,7 +92,8 @@ const METRICS = {
     shortLabel: "Relatively hot season (May, non-microclimate)",
     category: "energy",
     unit: "kWh",
-    fieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "summer_energy_kwh" },
+    fieldByLayer: { buildings: "hot_tmy_kwh", grid_500m: "hot_tmy_kwh" },
+    fallbackFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "summer_energy_kwh" },
     ramp: ENERGY_WEEKLY_RAMP
   },
   energy_transition: {
@@ -99,7 +101,8 @@ const METRICS = {
     shortLabel: "Transitional season (Oct, non-microclimate)",
     category: "energy",
     unit: "kWh",
-    fieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "autumn_energy_kwh" },
+    fieldByLayer: { buildings: "trans_tmy_kwh", grid_500m: "trans_tmy_kwh" },
+    fallbackFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "autumn_energy_kwh" },
     ramp: ENERGY_WEEKLY_RAMP
   },
   energy_hot_micro: {
@@ -107,9 +110,9 @@ const METRICS = {
     shortLabel: "Relatively hot season (May, microclimate)",
     category: "energy",
     unit: "kWh",
-    baseFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "summer_energy_kwh" },
-    pctFieldByLayer: { buildings: "summer_pct", grid_500m: "summer_pct" },
-    statsFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "summer_energy_kwh" },
+    fieldByLayer: { buildings: "hot_micro_kwh", grid_500m: "hot_micro_kwh" },
+    fallbackBaseFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "summer_energy_kwh" },
+    fallbackPctFieldByLayer: { buildings: "summer_pct", grid_500m: "summer_pct" },
     compute: "microclimate_energy",
     ramp: ENERGY_WEEKLY_RAMP
   },
@@ -118,9 +121,9 @@ const METRICS = {
     shortLabel: "Relatively cold season (Dec, microclimate)",
     category: "energy",
     unit: "kWh",
-    baseFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "winter_energy_kwh" },
-    pctFieldByLayer: { buildings: "winter_pct", grid_500m: "winter_pct" },
-    statsFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "winter_energy_kwh" },
+    fieldByLayer: { buildings: "cold_micro_kwh", grid_500m: "cold_micro_kwh" },
+    fallbackBaseFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "winter_energy_kwh" },
+    fallbackPctFieldByLayer: { buildings: "winter_pct", grid_500m: "winter_pct" },
     compute: "microclimate_energy",
     ramp: ENERGY_WEEKLY_RAMP
   },
@@ -129,9 +132,9 @@ const METRICS = {
     shortLabel: "Transitional season (Oct, microclimate)",
     category: "energy",
     unit: "kWh",
-    baseFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "autumn_energy_kwh" },
-    pctFieldByLayer: { buildings: "autumn_pct", grid_500m: "autumn_pct" },
-    statsFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "autumn_energy_kwh" },
+    fieldByLayer: { buildings: "trans_micro_kwh", grid_500m: "trans_micro_kwh" },
+    fallbackBaseFieldByLayer: { buildings: "typical_week_energy_kwh", grid_500m: "autumn_energy_kwh" },
+    fallbackPctFieldByLayer: { buildings: "autumn_pct", grid_500m: "autumn_pct" },
     compute: "microclimate_energy",
     ramp: ENERGY_WEEKLY_RAMP
   },
@@ -141,7 +144,8 @@ const METRICS = {
     category: "energy",
     unit: "%",
     displayScale: 100,
-    fieldByLayer: { buildings: "summer_pct", grid_500m: "summer_pct" },
+    fieldByLayer: { buildings: "hot_diff_pct", grid_500m: "hot_diff_pct" },
+    fallbackFieldByLayer: { buildings: "summer_pct", grid_500m: "summer_pct" },
     ramp: ENERGY_DIFFERENCE_RAMP
   },
   energy_cold_diff_pct: {
@@ -150,7 +154,8 @@ const METRICS = {
     category: "energy",
     unit: "%",
     displayScale: 100,
-    fieldByLayer: { buildings: "winter_pct", grid_500m: "winter_pct" },
+    fieldByLayer: { buildings: "cold_diff_pct", grid_500m: "cold_diff_pct" },
+    fallbackFieldByLayer: { buildings: "winter_pct", grid_500m: "winter_pct" },
     ramp: ENERGY_DIFFERENCE_RAMP
   },
   energy_transition_diff_pct: {
@@ -159,7 +164,8 @@ const METRICS = {
     category: "energy",
     unit: "%",
     displayScale: 100,
-    fieldByLayer: { buildings: "autumn_pct", grid_500m: "autumn_pct" },
+    fieldByLayer: { buildings: "trans_diff_pct", grid_500m: "trans_diff_pct" },
+    fallbackFieldByLayer: { buildings: "autumn_pct", grid_500m: "autumn_pct" },
     ramp: ENERGY_DIFFERENCE_RAMP
   },
   eui_2023: {
@@ -328,6 +334,11 @@ function hideTokenDialog() {
   els.tokenDialog.classList.remove("visible");
 }
 
+function finiteNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 function formatNumber(value, unit = "", scale = 1) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "No data";
@@ -394,11 +405,12 @@ function metricStats(layerName, metric = state.metric) {
 
 function metricInputExpression(layerName, metric = state.metric) {
   const def = metricDefinition(metric);
+  const field = fieldForLayer(layerName, metric);
   if (def.compute === "microclimate_energy") {
-    const baseField = def.baseFieldByLayer?.[layerName];
-    const pctField = def.pctFieldByLayer?.[layerName];
+    const baseField = def.fallbackBaseFieldByLayer?.[layerName];
+    const pctField = def.fallbackPctFieldByLayer?.[layerName];
     if (!baseField || !pctField) return null;
-    return [
+    const fallbackExpression = [
       "let",
       "base_value",
       ["to-number", ["get", baseField], -9999],
@@ -409,23 +421,49 @@ function metricInputExpression(layerName, metric = state.metric) {
         -9999
       ]
     ];
+    if (!field) return fallbackExpression;
+    return [
+      "let",
+      "direct_value",
+      ["to-number", ["get", field], -9999],
+      [
+        "case",
+        ["!=", ["var", "direct_value"], -9999],
+        ["var", "direct_value"],
+        fallbackExpression
+      ]
+    ];
   }
-  const field = fieldForLayer(layerName, metric);
   if (!field) return null;
-  return ["case", ["has", field], ["to-number", ["get", field], -9999], -9999];
+  const fallbackField = def.fallbackFieldByLayer?.[layerName];
+  if (!fallbackField) return ["case", ["has", field], ["to-number", ["get", field], -9999], -9999];
+  return [
+    "let",
+    "direct_value",
+    ["to-number", ["get", field], -9999],
+    [
+      "case",
+      ["!=", ["var", "direct_value"], -9999],
+      ["var", "direct_value"],
+      ["case", ["has", fallbackField], ["to-number", ["get", fallbackField], -9999], -9999]
+    ]
+  ];
 }
 
 function metricValueFromProperties(layerName, props, metric = state.metric) {
   const def = metricDefinition(metric);
   if (def.kind === "categorical") return props.building_type;
-  if (def.compute === "microclimate_energy") {
-    const base = Number(props[def.baseFieldByLayer?.[layerName]]);
-    const pct = Number(props[def.pctFieldByLayer?.[layerName]]);
-    if (!Number.isFinite(base)) return null;
-    return base * (1 + (Number.isFinite(pct) ? pct : 0));
-  }
   const field = fieldForLayer(layerName, metric);
-  return field ? props[field] : null;
+  const direct = finiteNumber(props[field]);
+  if (direct !== null) return direct;
+  if (def.compute === "microclimate_energy") {
+    const base = finiteNumber(props[def.fallbackBaseFieldByLayer?.[layerName]]);
+    const pct = finiteNumber(props[def.fallbackPctFieldByLayer?.[layerName]]);
+    if (base === null) return null;
+    return base * (1 + (pct ?? 0));
+  }
+  const fallbackField = def.fallbackFieldByLayer?.[layerName];
+  return fallbackField ? props[fallbackField] : null;
 }
 
 function weatherVariable(metric = state.metric) {

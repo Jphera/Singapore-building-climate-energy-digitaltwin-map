@@ -385,14 +385,6 @@ select:focus {
   text-align: left;
 }
 
-#energyMetricSelect {
-  min-height: 42px;
-  color: var(--nus-blue-dark);
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.25;
-}
-
 .search-row {
   display: grid;
   grid-template-columns: 1fr auto;
