@@ -260,6 +260,51 @@ const TYPE_COLORS = {
   supermarket: "#bae6fd"
 };
 
+const LCZ_ORDER = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+
+const LCZ_LABELS = {
+  1: "LCZ 1 - Compact high-rise",
+  2: "LCZ 2 - Compact mid-rise",
+  3: "LCZ 3 - Compact low-rise",
+  4: "LCZ 4 - Open high-rise",
+  6: "LCZ 6 - Open low-rise",
+  7: "LCZ 7 - Lightweight low-rise",
+  8: "LCZ 8 - Large low-rise",
+  9: "LCZ 9 - Sparsely built",
+  10: "LCZ 10 - Heavy industry",
+  11: "LCZ A - Dense trees",
+  12: "LCZ B - Scattered trees",
+  13: "LCZ C - Bush, scrub",
+  14: "LCZ D - Low plants",
+  15: "LCZ E - Bare rock/paved",
+  16: "LCZ F - Bare soil/sand",
+  17: "LCZ G - Water"
+};
+
+const LCZ_COLORS = {
+  1: "#8c1d18",
+  2: "#c73e2d",
+  3: "#f07b35",
+  4: "#d85c45",
+  6: "#f4a261",
+  7: "#f2c94c",
+  8: "#b8862f",
+  9: "#c7b97f",
+  10: "#5b5f66",
+  11: "#0b6b43",
+  12: "#2f8f5b",
+  13: "#71bf72",
+  14: "#b8d979",
+  15: "#9ca3af",
+  16: "#d7b98a",
+  17: "#3b82f6"
+};
+
+const LCZ_GROUPS = [
+  { id: "built", label: "Built LCZ types", codes: [1, 2, 3, 4, 6, 7, 8, 9, 10] },
+  { id: "land_cover", label: "Land-cover LCZ types", codes: [11, 12, 13, 14, 15, 16, 17] }
+];
+
 const REGION_GROUP_LABELS = {
   "Central Region": "Central Region",
   "East Region": "East Region",
@@ -301,6 +346,10 @@ const state = {
   activeWeatherSeriesKey: "",
   weatherTimeIndex: 0,
   weatherPlayTimer: null,
+  lczLayer: "off",
+  lczRaw: null,
+  lczGridRows: [],
+  lczGridById: new Map(),
   fallbackSources: {
     weather: false,
     buildingOverview: false
@@ -320,6 +369,7 @@ const els = {
   regionFilterList: document.getElementById("regionFilterList"),
   regionSelectAll: document.getElementById("regionSelectAll"),
   regionClearAll: document.getElementById("regionClearAll"),
+  lczLayerButtons: document.getElementById("lczLayerButtons"),
   weatherButtons: document.getElementById("weatherButtons"),
   energyMetricSelect: document.getElementById("energyMetricSelect"),
   measuredEnergyButtons: document.getElementById("measuredEnergyButtons"),
@@ -448,6 +498,31 @@ function allRegionsSelected() {
 
 function regionFalseFilter() {
   return ["==", ["get", "region_id"], "__none__"];
+}
+
+function selectedRegionAllows(regionIdValue) {
+  const id = String(regionIdValue || "");
+  if (!regionFeatures().length) return true;
+  if (!id) return false;
+  if (allRegionsSelected()) return true;
+  if (!selectedRegionCount()) return false;
+  return state.selectedRegionIds.has(id);
+}
+
+function lczRegionFilterExpression() {
+  if (!regionFeatures().length || allRegionsSelected()) return ["has", "region_id"];
+  if (!selectedRegionCount()) return regionFalseFilter();
+  return ["in", ["get", "region_id"], ["literal", Array.from(state.selectedRegionIds)]];
+}
+
+function lczLabel(code) {
+  const numeric = Number(code);
+  if (!Number.isFinite(numeric) || !LCZ_LABELS[numeric]) return "No data";
+  return LCZ_LABELS[numeric];
+}
+
+function lczColor(code) {
+  return LCZ_COLORS[Number(code)] || "rgba(148, 163, 184, 0.3)";
 }
 
 function buildingRegionPropertyAvailable() {
@@ -637,6 +712,35 @@ function focusRegionIds(ids, maxZoom = 13.8) {
   }, 900);
 }
 
+function applyLczFeatureState() {
+  if (!state.map?.getSource("grid") || !state.lczGridRows.length) return;
+  const allSelected = allRegionsSelected();
+  try {
+    state.lczGridRows.forEach((row) => {
+      state.map.setFeatureState(featureStateTarget("grid", row.grid_id), {
+        lcz_mode: row.lcz_mode,
+        lcz_purity: row.lcz_purity,
+        lcz_region_selected: allSelected || selectedRegionAllows(row.region_id)
+      });
+    });
+  } catch (error) {
+    console.warn("LCZ feature state could not be applied", error);
+  }
+}
+
+function applyLczRegionFilter() {
+  if (!state.map) return;
+  applyLczFeatureState();
+  const rawFilter = lczRegionFilterExpression();
+  ["lcz-100m-fill", "lcz-100m-line"].forEach((layer) => {
+    if (!state.map.getLayer(layer)) return;
+    state.map.setFilter(layer, rawFilter);
+  });
+  if (state.map.getLayer("lcz-grid-fill")) {
+    state.map.setPaintProperty("lcz-grid-fill", "fill-opacity", lczGridOpacityExpression());
+  }
+}
+
 function applyRegionFilter() {
   if (!state.map) return;
   const buildingFilter = buildingRegionFilterExpression();
@@ -654,6 +758,7 @@ function applyRegionFilter() {
       state.map.setFilter("region-filter-label", regionLabelFilterExpression());
       state.map.setLayoutProperty("region-filter-label", "visibility", shouldShowRegionLabels() ? "visible" : "none");
     }
+    applyLczRegionFilter();
   } catch (error) {
     console.warn("Region filter could not be applied", error);
   }
@@ -919,6 +1024,42 @@ async function refreshWeatherSeries() {
   }
 }
 
+function normalizeLczGridStats(payload) {
+  const fields = payload?.grid?.fields || [];
+  const rows = (payload?.grid?.rows || []).map((row) => {
+    const record = {};
+    fields.forEach((field, index) => {
+      record[field] = row[index];
+    });
+    const proportions = {};
+    LCZ_ORDER.forEach((code) => {
+      proportions[code] = Number(record[`p_${code}`] || 0);
+    });
+    return {
+      grid_id: Number(record.grid_id),
+      region_id: record.region_id || "",
+      region_name: record.region_name || "",
+      lcz_mode: Number(record.lcz_mode || 0),
+      lcz_purity: Number(record.lcz_purity || 0),
+      proportions
+    };
+  });
+  state.lczGridRows = rows.filter((row) => Number.isFinite(row.grid_id));
+  state.lczGridById = new Map(state.lczGridRows.map((row) => [row.grid_id, row]));
+  return { fields, rows: state.lczGridRows };
+}
+
+async function loadLczData() {
+  const [gridResponse, rawResponse] = await Promise.all([
+    fetch("data/lcz_grid_stats.json", { cache: "no-store" }),
+    fetch("data/lcz_100m.geojson", { cache: "no-store" })
+  ]);
+  if (!gridResponse.ok) throw new Error(`LCZ grid stats request failed: ${gridResponse.status}`);
+  if (!rawResponse.ok) throw new Error(`LCZ 100 m layer request failed: ${rawResponse.status}`);
+  normalizeLczGridStats(await gridResponse.json());
+  state.lczRaw = await rawResponse.json();
+}
+
 function showLoading(message) {
   els.loading.textContent = message;
   els.loading.classList.remove("hidden");
@@ -951,6 +1092,12 @@ function hasCoreHostedTilesets() {
 function sourceLayer(kind) {
   if (state.sourceTypes[kind] !== "vector") return {};
   return { "source-layer": state.sourceLayers[kind] };
+}
+
+function featureStateTarget(kind, id) {
+  const target = { source: kind, id: Number(id) };
+  if (state.sourceTypes[kind] === "vector") target.sourceLayer = state.sourceLayers[kind];
+  return target;
 }
 
 function tilesetId(url) {
@@ -1050,6 +1197,27 @@ function buildTypeExpression() {
   return expression;
 }
 
+function buildLczExpression(inputExpression) {
+  const expression = ["match", ["to-number", inputExpression, -1]];
+  LCZ_ORDER.forEach((code) => expression.push(code, LCZ_COLORS[code]));
+  expression.push("rgba(148, 163, 184, 0.22)");
+  return expression;
+}
+
+function lczRawColorExpression() {
+  return buildLczExpression(["get", "lcz_code"]);
+}
+
+function lczGridColorExpression() {
+  return buildLczExpression(["feature-state", "lcz_mode"]);
+}
+
+function lczGridOpacityExpression() {
+  if (!selectedRegionCount()) return 0;
+  if (allRegionsSelected()) return 0.64;
+  return ["case", ["boolean", ["feature-state", "lcz_region_selected"], false], 0.66, 0];
+}
+
 function buildArchetypeExpression() {
   const expression = ["match", ["coalesce", ["get", "dominant_archetype"], "unknown"]];
   Object.entries(BUILDING_TYPE_GROUPS).forEach(([group, def]) => expression.push(group, def.color));
@@ -1103,6 +1271,7 @@ function createMetricButton(container, key) {
   button.textContent = def.shortLabel;
   button.dataset.metric = key;
   button.addEventListener("click", () => {
+    state.lczLayer = "off";
     state.metric = key;
     if (def.category === "weather" && state.mode === "buildings") {
       state.mode = "combined";
@@ -1168,6 +1337,16 @@ function initMetricButtons() {
   updateMetricButtons();
 }
 
+function updateLczButtons() {
+  if (!els.lczLayerButtons) return;
+  const hasLczData = Boolean(state.lczRaw && state.lczGridRows.length);
+  els.lczLayerButtons.querySelectorAll("button[data-lcz-layer]").forEach((button) => {
+    const layer = button.dataset.lczLayer;
+    button.classList.toggle("active", layer === state.lczLayer);
+    button.disabled = layer !== "off" && !hasLczData;
+  });
+}
+
 function updateMetricButtons() {
   const buttons = [
     ...els.buildingMetricButtons.querySelectorAll("button"),
@@ -1181,6 +1360,7 @@ function updateMetricButtons() {
     button.classList.toggle("active", metric === state.metric);
     button.disabled = unavailable;
   });
+  updateLczButtons();
   if (els.energyMetricSelect) {
     els.energyMetricSelect.value = ENERGY_SIMULATION_METRICS.includes(state.metric) ? state.metric : "";
     Array.from(els.energyMetricSelect.options).forEach((option) => {
@@ -1209,14 +1389,19 @@ function setVisibility(layer, visible) {
 function updateLayerVisibility() {
   if (!state.map) return;
   const metric = metricDefinition();
+  const lczActive = state.lczLayer !== "off";
   const showBuildings = state.mode !== "grid";
   const showGrid = state.mode !== "buildings";
-  const showWeather = metric.category === "weather" && showGrid;
-  const showGridFill = showGrid && !showWeather && hasMetricForLayer("grid_500m", state.metric);
+  const showWeather = !lczActive && metric.category === "weather" && showGrid;
+  const showGridFill = !lczActive && showGrid && !showWeather && hasMetricForLayer("grid_500m", state.metric);
   setVisibility("weather-fill", showWeather);
   setVisibility("grid-fill", showGridFill);
-  setVisibility("grid-line", showGrid || showWeather);
-  setVisibility("grid-selected", showGrid || showWeather);
+  setVisibility("grid-line", !lczActive && (showGrid || showWeather));
+  setVisibility("grid-selected", showGrid || showWeather || state.lczLayer === "grid");
+  setVisibility("lcz-100m-fill", state.lczLayer === "raw");
+  setVisibility("lcz-100m-line", state.lczLayer === "raw");
+  setVisibility("lcz-grid-fill", state.lczLayer === "grid");
+  setVisibility("lcz-grid-line", state.lczLayer === "grid");
   setVisibility("building-overview-fill", showBuildings);
   setVisibility("building-overview-line", showBuildings);
   setVisibility("buildings-extrusion", showBuildings);
@@ -1236,6 +1421,13 @@ function updateMapStyle() {
   if (state.map.getLayer("grid-fill")) {
     state.map.setPaintProperty("grid-fill", "fill-color", gridColorExpression());
     state.map.setPaintProperty("grid-fill", "fill-opacity", state.gridOpacity);
+  }
+  if (state.map.getLayer("lcz-100m-fill")) {
+    state.map.setPaintProperty("lcz-100m-fill", "fill-color", lczRawColorExpression());
+  }
+  if (state.map.getLayer("lcz-grid-fill")) {
+    state.map.setPaintProperty("lcz-grid-fill", "fill-color", lczGridColorExpression());
+    state.map.setPaintProperty("lcz-grid-fill", "fill-opacity", lczGridOpacityExpression());
   }
   if (state.map.getLayer("weather-fill")) {
     state.map.setPaintProperty("weather-fill", "fill-color", weatherColorExpression());
@@ -1279,8 +1471,91 @@ function renderTypeLegend() {
     .join("");
 }
 
+function lczStatsForActiveLayer() {
+  const counts = Object.fromEntries(LCZ_ORDER.map((code) => [code, 0]));
+  let total = 0;
+  let gridCells = 0;
+  let purityTotal = 0;
+
+  if (state.lczLayer === "grid") {
+    state.lczGridRows.forEach((row) => {
+      if (!selectedRegionAllows(row.region_id) || !row.lcz_mode) return;
+      counts[row.lcz_mode] = (counts[row.lcz_mode] || 0) + 1;
+      total += 1;
+      gridCells += 1;
+      purityTotal += Number(row.lcz_purity || 0);
+    });
+    return {
+      counts,
+      total,
+      unitLabel: "500 m cells",
+      subtitle: gridCells ? `Mean dominant-type purity ${formatNumber(purityTotal / gridCells, "%")}` : "No cells in selected areas"
+    };
+  }
+
+  (state.lczRaw?.features || []).forEach((feature) => {
+    const props = feature.properties || {};
+    if (!selectedRegionAllows(props.region_id)) return;
+    const code = Number(props.lcz_code);
+    const cells = Number(props.cell_count || 0);
+    if (!code || !cells) return;
+    counts[code] = (counts[code] || 0) + cells;
+    total += cells;
+  });
+
+  return {
+    counts,
+    total,
+    unitLabel: "100 m cells",
+    subtitle: total ? `${compactCount(total)} classified 100 m cells in selected areas` : "No LCZ cells in selected areas"
+  };
+}
+
+function renderLczLegend() {
+  const stats = lczStatsForActiveLayer();
+  els.legendTitle.textContent = state.lczLayer === "grid" ? "Dominant LCZ (500 m grid)" : "LCZ classification (100 m)";
+  els.legendRamp.classList.add("hidden");
+  els.legendTicks.classList.add("hidden");
+  els.typeLegend.classList.remove("hidden");
+
+  els.typeLegend.innerHTML = `
+    <div class="lcz-summary-note">${htmlSafe(stats.subtitle)}</div>
+    ${LCZ_GROUPS.map((group) => {
+      const groupCount = group.codes.reduce((sum, code) => sum + (stats.counts[code] || 0), 0);
+      const rows = group.codes
+        .map((code) => {
+          const count = stats.counts[code] || 0;
+          const share = stats.total ? `${((count / stats.total) * 100).toFixed(1)}%` : "--";
+          return `
+            <div class="type-swatch-row lcz-swatch-row">
+              <span class="swatch" style="background:${lczColor(code)}"></span>
+              <span>${htmlSafe(lczLabel(code))}</span>
+              <strong>${share}</strong>
+              <em>${count ? compactCount(count) : "--"}</em>
+            </div>
+          `;
+        })
+        .join("");
+      return `
+        <div class="type-group">
+          <div class="type-group-head">
+            <span class="swatch large" style="background:${group.id === "built" ? "#d85c45" : "#2f8f5b"}"></span>
+            <strong>${group.label}</strong>
+            <em>${compactCount(groupCount)} ${stats.unitLabel}</em>
+          </div>
+          <div class="type-group-list">${rows}</div>
+        </div>
+      `;
+    }).join("")}
+  `;
+}
+
 function updateLegend() {
   updateMetricButtons();
+  if (state.lczLayer !== "off") {
+    renderLczLegend();
+    return;
+  }
   if (state.metric === "building_type") {
     els.legendTitle.textContent = "Building archetypes";
     els.legendRamp.classList.add("hidden");
@@ -1409,6 +1684,23 @@ function updateFeaturePanel(feature, type) {
 function popupHtml(feature, type) {
   const props = feature.properties;
   const metric = metricDefinition();
+  if (type === "lczRaw") {
+    return `
+      <p class="popup-title">${htmlSafe(lczLabel(props.lcz_code))}</p>
+      <div class="popup-line"><span>Resolution</span><strong>100 m LCZ</strong></div>
+      <div class="popup-line"><span>Region</span><strong>${htmlSafe(props.region_name || "No data")}</strong></div>
+      <div class="popup-line"><span>Cells</span><strong>${compactCount(props.cell_count)}</strong></div>
+    `;
+  }
+  if (type === "lczGrid") {
+    const row = state.lczGridById.get(Number(props.grid_id));
+    return `
+      <p class="popup-title">500 m grid ${props.grid_id}</p>
+      <div class="popup-line"><span>Dominant LCZ</span><strong>${htmlSafe(lczLabel(row?.lcz_mode))}</strong></div>
+      <div class="popup-line"><span>Purity</span><strong>${formatNumber(row?.lcz_purity, "%")}</strong></div>
+      <div class="popup-line"><span>Region</span><strong>${htmlSafe(row?.region_name || "No data")}</strong></div>
+    `;
+  }
   if (type === "building") {
     const metricValue = metricValueFromProperties("buildings", props, state.metric);
     const value =
@@ -1442,6 +1734,12 @@ function popupHtml(feature, type) {
 }
 
 function setSelectedFeature(feature, type) {
+  if (type === "lczRaw") {
+    state.selectedBuildingId = null;
+    state.selectedGridId = null;
+    updateFeaturePanel(feature, type);
+    return;
+  }
   if (type === "building") {
     state.selectedBuildingId = Number(feature.properties.objectid);
     state.selectedGridId = null;
@@ -1641,6 +1939,12 @@ async function addLayers() {
       data: state.regions
     });
   }
+  if (state.lczRaw) {
+    state.map.addSource("lczRaw", {
+      type: "geojson",
+      data: state.lczRaw
+    });
+  }
 
   if (state.fallbackSources.buildingOverview) {
     state.map.addLayer({
@@ -1697,6 +2001,56 @@ async function addLayers() {
       "line-width": 0.5
     }
   });
+
+  state.map.addLayer({
+    id: "lcz-grid-fill",
+    type: "fill",
+    source: "grid",
+    ...sourceLayer("grid"),
+    layout: { visibility: "none" },
+    paint: {
+      "fill-color": lczGridColorExpression(),
+      "fill-opacity": lczGridOpacityExpression()
+    }
+  });
+  state.map.addLayer({
+    id: "lcz-grid-line",
+    type: "line",
+    source: "grid",
+    ...sourceLayer("grid"),
+    layout: { visibility: "none" },
+    paint: {
+      "line-color": "rgba(31, 41, 55, 0.36)",
+      "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.25, 12, 0.7],
+      "line-opacity": 0.82
+    }
+  });
+
+  if (state.lczRaw) {
+    state.map.addLayer({
+      id: "lcz-100m-fill",
+      type: "fill",
+      source: "lczRaw",
+      filter: lczRegionFilterExpression(),
+      layout: { visibility: "none" },
+      paint: {
+        "fill-color": lczRawColorExpression(),
+        "fill-opacity": 0.62
+      }
+    });
+    state.map.addLayer({
+      id: "lcz-100m-line",
+      type: "line",
+      source: "lczRaw",
+      filter: lczRegionFilterExpression(),
+      minzoom: 11.2,
+      layout: { visibility: "none" },
+      paint: {
+        "line-color": "rgba(17, 24, 39, 0.24)",
+        "line-width": 0.35
+      }
+    });
+  }
 
   if (state.regions) {
     state.map.addLayer({
@@ -1809,6 +2163,8 @@ async function addLayers() {
   [
     ["buildings-extrusion", "building"],
     ["grid-fill", "grid"],
+    ["lcz-grid-fill", "lczGrid"],
+    ["lcz-100m-fill", "lczRaw"],
     ["weather-fill", "grid"],
     ["building-overview-fill", "overview"]
   ].forEach(([layer, type]) => {
@@ -1847,6 +2203,10 @@ async function loadData() {
   if (!regionResponse.ok) throw new Error(`Region request failed: ${regionResponse.status}`);
   state.regions = await regionResponse.json();
   renderRegionFilter();
+
+  showLoading("Loading LCZ analysis layers...");
+  await loadLczData();
+  updateLczButtons();
 
   state.useHostedTilesets = hasCoreHostedTilesets();
   if (state.useHostedTilesets) {
@@ -1945,11 +2305,20 @@ function bindEvents() {
   });
   els.energyMetricSelect?.addEventListener("change", () => {
     if (!els.energyMetricSelect.value) return;
+    state.lczLayer = "off";
     state.metric = els.energyMetricSelect.value;
     updateMetricButtons();
     updateMapStyle();
     updateLegend();
     refreshWeatherSeries();
+  });
+  els.lczLayerButtons?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-lcz-layer]");
+    if (!button || button.disabled) return;
+    state.lczLayer = button.dataset.lczLayer || "off";
+    updateMetricButtons();
+    updateMapStyle();
+    updateLegend();
   });
   els.searchButton.addEventListener("click", search);
   els.searchInput.addEventListener("keydown", (event) => {
@@ -1982,6 +2351,7 @@ function bindEvents() {
       });
       syncRegionCheckboxes();
       applyRegionFilter();
+      updateLegend();
       if (input.checked) focusRegionIds(ids, 11.9);
       return;
     }
@@ -1990,17 +2360,20 @@ function bindEvents() {
     else state.selectedRegionIds.delete(id);
     syncRegionCheckboxes();
     applyRegionFilter();
+    updateLegend();
     if (input.checked) focusRegionIds([id], 13.8);
   });
   els.regionSelectAll?.addEventListener("click", () => {
     state.selectedRegionIds = new Set(regionIds());
     syncRegionCheckboxes();
     applyRegionFilter();
+    updateLegend();
   });
   els.regionClearAll?.addEventListener("click", () => {
     state.selectedRegionIds = new Set();
     syncRegionCheckboxes();
     applyRegionFilter();
+    updateLegend();
   });
   els.resetView.addEventListener("click", () => {
     state.selectedBuildingId = null;

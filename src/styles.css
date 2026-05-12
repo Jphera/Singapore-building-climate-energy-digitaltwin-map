@@ -414,6 +414,15 @@ select:focus {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.lcz-layer-buttons {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lcz-layer-buttons button {
+  min-height: 34px;
+  font-size: 12px;
+}
+
 .segmented button {
   min-width: 0;
   padding: 0 8px;
@@ -681,6 +690,24 @@ input[type="range"] {
 .type-swatch-row strong {
   color: var(--ink);
   font-size: 12px;
+}
+
+.lcz-summary-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.lcz-swatch-row {
+  grid-template-columns: auto 1fr auto auto;
+}
+
+.lcz-swatch-row em {
+  min-width: 44px;
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  text-align: right;
 }
 
 .swatch {

@@ -23,7 +23,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
 
-    <link rel="stylesheet" href="src/styles.css?v=20260509-region-filter-v2" />
+    <link rel="stylesheet" href="src/styles.css?v=20260512-lcz-v1" />
 
     <style>
       #resetView {
@@ -164,6 +164,15 @@
                 <div id="regionFilterList" class="region-filter-list"></div>
               </div>
             </details>
+          </div>
+
+          <div class="control-block lcz-analysis-block">
+            <span class="control-label">LCZ analysis</span>
+            <div id="lczLayerButtons" class="segmented compact lcz-layer-buttons" aria-label="LCZ analysis layer">
+              <button type="button" data-lcz-layer="off">Off</button>
+              <button type="button" data-lcz-layer="raw">100 m LCZ</button>
+              <button type="button" data-lcz-layer="grid">500 m dominant</button>
+            </div>
           </div>
 
           <!-- Hidden default spatial resolution for buildings: building-level only -->
@@ -394,7 +403,7 @@
     </script>
 
     <script src="src/config.js?v=20260509-weekly-energy-tilesets"></script>
-    <script src="src/app.js?v=20260510-measured-eui"></script>
+    <script src="src/app.js?v=20260512-lcz-v1"></script>
 
     <script>
       let microclimateDefaultsApplied = false;
