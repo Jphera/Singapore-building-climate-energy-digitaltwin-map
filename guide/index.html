@@ -36,6 +36,17 @@
       line-height: 1.65;
     }
 
+    a {
+      color: var(--nus-orange);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    a:hover {
+      color: var(--nus-blue);
+      text-decoration: underline;
+    }
+
     .page {
       display: grid;
       grid-template-columns: 280px minmax(0, 1fr);
@@ -52,27 +63,20 @@
       overflow-y: auto;
     }
 
-    .sidebar-title {
-      margin-bottom: 36px;
-      color: var(--nus-blue);
-      font-size: 18px;
-      font-weight: 800;
-      line-height: 1.25;
-    }
-
     .back-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       margin-bottom: 48px;
-      color: var(--nus-blue);
+      color: var(--nus-orange);
       font-size: 14px;
       font-weight: 700;
       text-decoration: none;
     }
 
     .back-link:hover {
-      color: var(--nus-orange);
+      color: var(--nus-blue);
+      text-decoration: none;
     }
 
     .nav-title {
@@ -94,14 +98,16 @@
       display: block;
       padding: 8px 10px;
       border-radius: 8px;
-      color: #374151;
+      color: var(--nus-orange);
       font-size: 15px;
+      font-weight: 700;
       text-decoration: none;
     }
 
     .nav-list a:hover {
-      background: #eef5ff;
+      background: #fff4e8;
       color: var(--nus-blue);
+      text-decoration: none;
     }
 
     .content {
@@ -211,6 +217,21 @@
       color: var(--nus-blue);
     }
 
+    .team-intro {
+      margin-top: 18px;
+      margin-bottom: 6px;
+      text-align: left;
+    }
+
+    .team-list {
+      margin-top: 0;
+      padding-left: 22px;
+    }
+
+    .team-list li {
+      margin: 6px 0;
+    }
+
     .publication-list {
       padding-left: 0;
       list-style: none;
@@ -265,11 +286,6 @@
 <body>
   <div class="page">
     <aside class="sidebar">
-      <div class="sidebar-title">
-        Urban Digital Twins<br />
-        User Guide
-      </div>
-
       <a class="back-link" href="../">
         <i class="fa-solid fa-arrow-left"></i>
         Back to map
@@ -293,7 +309,7 @@
         <h1>BIOR Urban Digital Twins User Guide</h1>
         <p>
           This guide introduces the Urban Digital Twins platform, including its project background,
-          team, data layers, and related publications.
+          team, data source, and related publications.
         </p>
       </div>
 
@@ -393,14 +409,13 @@
         <h2><i class="fa-solid fa-book"></i>Publications</h2>
 
         <p>
-          Publications related to this platform will be listed here：
+          Publications related to this platform will be listed here:
         </p>
 
         <ul class="publication-list">
           <li>
             Publication information to be added.
           </li>
-
         </ul>
       </section>
 
