@@ -14,7 +14,7 @@ const WEATHER_VARIABLES = {
   solar: { label: "SWDOWN shortwave radiation", shortLabel: "SWDOWN", unit: "W/m2", suffix: "wm2" }
 };
 
-const ENERGY_WEEKLY_RAMP = ["#edf7fb", "#b7dbe8", "#70b6cf", "#2f86b2", "#0d4f78"];
+const ENERGY_WEEKLY_RAMP = ["#fff7bc", "#fee391", "#fec44f", "#fe9929", "#d95f0e", "#8c2d04"];
 const ENERGY_DIFFERENCE_RAMP = ["#2166ac", "#67a9cf", "#f7f7f7", "#ef8a62", "#b2182b"];
 
 const ENERGY_SIMULATION_METRICS = [
