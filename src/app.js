@@ -8,10 +8,10 @@ const PERIODS = {
 };
 
 const WEATHER_VARIABLES = {
-  temp: { label: "T2m air temperature", shortLabel: "T2m", unit: "degC", suffix: "c" },
-  wind: { label: "Wind10m speed", shortLabel: "Wind10m", unit: "m/s", suffix: "ms" },
-  rh: { label: "RH2m relative humidity", shortLabel: "RH2m", unit: "%", suffix: "pct" },
-  solar: { label: "SWDOWN shortwave radiation", shortLabel: "SWDOWN", unit: "W/m2", suffix: "wm2" }
+  temp: { label: "2 m air temperature", shortLabel: "2 m air temperature", unit: "degC", suffix: "c" },
+  wind: { label: "10 m wind speed", shortLabel: "10 m wind speed", unit: "m/s", suffix: "ms" },
+  rh: { label: "2 m relative humidity", shortLabel: "2 m relative humidity", unit: "%", suffix: "pct" },
+  solar: { label: "Solar shortwave radiation", shortLabel: "Solar shortwave radiation", unit: "W/m2", suffix: "wm2" }
 };
 
 const ENERGY_WEEKLY_RAMP = ["#fff7bc", "#fee391", "#fec44f", "#fe9929", "#d95f0e", "#8c2d04"];
@@ -169,8 +169,8 @@ const METRICS = {
     ramp: ENERGY_DIFFERENCE_RAMP
   },
   eui_2023: {
-    label: "Measured yearly energy use intensity",
-    shortLabel: "Measured yearly EUI",
+    label: "Measured yearly energy use intensity (2023)",
+    shortLabel: "Measured yearly EUI (2023)",
     category: "energy",
     unit: "kWh/m2/yr",
     positiveOnly: true,
@@ -1672,7 +1672,7 @@ function buildingDetails(props) {
     detailRow("Height", formatNumber(props.height_m, "m")),
     detailRow("Footprint", formatNumber(props.footprint_m2, "m2")),
     detailRow("GFA", formatNumber(props.gfa_m2, "m2")),
-    detailRow("Measured yearly EUI", formatNumber(metricValueFromProperties("buildings", props, "eui_2023"), "kWh/m2/yr")),
+    detailRow("Measured yearly EUI (2023)", formatNumber(metricValueFromProperties("buildings", props, "eui_2023"), "kWh/m2/yr")),
     detailRow("Energy use", formatNumber(props.energy_total_kwh, "kWh")),
     detailRow("Relative cold sensitivity", formatNumber(props.winter_pct, "%", 100)),
     detailRow("Relative hot sensitivity", formatNumber(props.summer_pct, "%", 100)),

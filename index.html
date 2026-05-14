@@ -568,7 +568,7 @@
 
           applyWeatherButtonOrder();
 
-          const temperatureReady = clickButtonByText("weatherButtons", "T2m");
+          const temperatureReady = clickButtonByText("weatherButtons", "2 m air temperature");
           const hotReady = clickButtonByText("periodButtons", "Relatively hot season (May)");
 
           if ((temperatureReady && hotReady) || attempts > 20) {
