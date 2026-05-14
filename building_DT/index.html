@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Building Digital Twin | BIOR Lab</title>
+
+    <link rel="icon" type="image/png" href="../icon.png" />
+    <link rel="apple-touch-icon" href="../icon.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="../src/styles.css" />
+
+    <style>
+      .building-dt-visual {
+        position: relative;
+        grid-column: 3;
+        grid-row: 1;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        background: #eef3f7;
+      }
+
+      .building-dt-visual img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center center;
+        display: block;
+      }
+
+      @media (max-width: 860px) {
+        .building-dt-visual {
+          order: 2;
+          grid-column: auto;
+          grid-row: auto;
+          width: 100%;
+          height: 62vh;
+          min-height: 420px;
+        }
+
+        .building-dt-visual img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main id="app">
+      <!-- Left navigation menu -->
+      <nav class="app-nav" aria-label="Main navigation">
+        <a class="app-nav-item" href="../">
+          <span class="nav-icon"><i class="fa-solid fa-house"></i></span>
+          <span>Urban DT</span>
+        </a>
+
+        <a class="app-nav-item active" href="./">
+          <span class="nav-icon"><i class="fa-solid fa-cube"></i></span>
+          <span>Building DT</span>
+        </a>
+      </nav>
+
+      <!-- Static image replacing the map -->
+      <section class="building-dt-visual" aria-label="Building digital twin visual">
+        <img src="../DT_Horizontal.png" alt="Building digital twin overview" />
+      </section>
+
+      <!-- Left information panel -->
+      <section class="panel panel-left" aria-label="Building DT information">
+        <div class="tab-panel active">
+          <div class="brand">
+            <div class="brand-top">
+              <img src="../bior_logo.png" alt="BIOR Lab logo" class="bior-logo" />
+            </div>
+
+            <h1 class="brand-title">
+              <span class="title-highlight">Building Digital Twins:</span><br />
+              <span class="title-main">
+                A Building-Scale Digital Twin Platform for Smart Building Operations
+              </span>
+            </h1>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">Project summary</span>
+
+            <p class="guide-note">
+              Building Digital Twin is a related project that focuses on building-scale digital twin
+              technologies. It aims to integrate building information, operational data, and
+              interactive visualization to support smarter building monitoring, analysis, and
+              decision-making.
+            </p>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">Main focus</span>
+            <p class="summary-text">
+              Building-scale digital twin development, BIM-IoT integration, data visualization,
+              and intelligent building operations.
+            </p>
+          </div>
+
+          <div class="control-block">
+            <span class="control-label">Connection to Urban Digital Twins</span>
+            <p class="summary-text">
+              While the BIOR Urban Digital Twin focuses on urban-scale microclimate-informed
+              building energy analysis, Building DT focuses on building-scale data integration
+              and operational intelligence. Together, they support multi-scale digitalization of
+              the built environment.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
