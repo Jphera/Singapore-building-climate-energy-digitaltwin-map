@@ -150,7 +150,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 28px 0 18px;
+  padding: 20px 0 18px;
   background:
     linear-gradient(180deg, var(--nus-blue-dark), var(--nus-blue));
   border-right: 1px solid rgba(255, 255, 255, 0.12);
@@ -205,6 +205,72 @@ select:focus {
   font-size: 22px;
   line-height: 1;
   color: #ffffff;
+}
+
+/* Hierarchical navigation: Urban DT contains About, Buildings, Microclimate, Energy */
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.nav-group-title {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 78px;
+  padding: 10px 8px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--nus-orange);
+}
+
+.nav-group-title .nav-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 20px;
+}
+
+.nav-child {
+  min-height: 70px;
+  padding: 8px 6px 8px 12px;
+  opacity: 0.92;
+}
+
+.nav-child .nav-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 17px;
+}
+
+.nav-child span:last-child {
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.nav-child::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.nav-child:hover {
+  opacity: 1;
+}
+
+.nav-child.active::before {
+  left: 0;
+  background: var(--nus-orange);
 }
 
 .nav-building-dt {
@@ -955,6 +1021,25 @@ input[type="range"] {
     font-size: 20px;
   }
 
+  .nav-group-title {
+    min-height: 72px;
+    font-size: 11px;
+  }
+
+  .nav-child {
+    min-height: 66px;
+  }
+
+  .nav-child .nav-icon {
+    width: 23px;
+    height: 23px;
+    font-size: 16px;
+  }
+
+  .nav-child span:last-child {
+    font-size: 10px;
+  }
+
   .panel-left {
     width: var(--sidebar-width);
     padding: 20px;
@@ -1037,6 +1122,52 @@ input[type="range"] {
     font-size: 18px;
   }
 
+  .nav-group {
+    flex-direction: row;
+    flex: 0 0 auto;
+  }
+
+  .nav-group-title {
+    min-width: 84px;
+    min-height: 64px;
+    height: 64px;
+    gap: 3px;
+    padding: 7px 10px;
+    border-left: none;
+    border-bottom: 4px solid var(--nus-orange);
+    font-size: 11px;
+    flex: 0 0 auto;
+  }
+
+  .nav-group-title .nav-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
+
+  .nav-child {
+    min-width: 84px;
+    min-height: 64px;
+    height: 64px;
+    padding: 7px 10px;
+    flex: 0 0 auto;
+  }
+
+  .nav-child .nav-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
+
+  .nav-child span:last-child {
+    font-size: 11px;
+  }
+
+  .nav-child::after {
+    display: none;
+  }
+
+  .nav-building-dt,
   .nav-help {
     margin-top: 0;
   }
@@ -1210,8 +1341,6 @@ input[type="range"] {
   outline: 3px solid rgba(0, 61, 124, 0.18);
   outline-offset: 2px;
 }
-
-
 
 .guide-note {
   margin-top: 18px;

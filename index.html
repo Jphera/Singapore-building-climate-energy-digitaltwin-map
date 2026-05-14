@@ -38,26 +38,42 @@
     <main id="app">
       <!-- Left navigation menu -->
       <nav class="app-nav" aria-label="Main navigation">
-        <a class="app-nav-item active" href="#about">
-          <span class="nav-icon"><i class="fa-solid fa-house"></i></span>
-          <span>About</span>
-        </a>
+        <div class="nav-group nav-urban-group">
+          <div class="nav-group-title">
+            <span class="nav-icon"><i class="fa-solid fa-city"></i></span>
+            <span>Urban DT</span>
+          </div>
 
-        <a class="app-nav-item" href="#buildings">
-          <span class="nav-icon"><i class="fa-solid fa-building"></i></span>
-          <span>Buildings</span>
-        </a>
+          <a class="app-nav-item nav-child active" href="#about">
+            <span class="nav-icon"><i class="fa-solid fa-house"></i></span>
+            <span>About</span>
+          </a>
 
-        <a class="app-nav-item" href="#microclimate">
-          <span class="nav-icon"><i class="fa-solid fa-cloud-sun"></i></span>
-          <span>Microclimate</span>
-        </a>
+          <a class="app-nav-item nav-child" href="#buildings">
+            <span class="nav-icon"><i class="fa-solid fa-building"></i></span>
+            <span>Buildings</span>
+          </a>
 
-        <a class="app-nav-item" href="#energy">
-          <span class="nav-icon"><i class="fa-solid fa-lightbulb"></i></span>
-          <span>Energy</span>
-        </a>
+          <a class="app-nav-item nav-child" href="#microclimate">
+            <span class="nav-icon"><i class="fa-solid fa-cloud-sun"></i></span>
+            <span>Microclimate</span>
+          </a>
 
+          <a class="app-nav-item nav-child" href="#energy">
+            <span class="nav-icon"><i class="fa-solid fa-lightbulb"></i></span>
+            <span>Energy</span>
+          </a>
+
+          <a
+            class="app-nav-item nav-child nav-guide"
+            href="./guide/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="nav-icon"><i class="fa-solid fa-book-open"></i></span>
+            <span>User guide</span>
+          </a>
+        </div>
 
         <a
           class="app-nav-item nav-building-dt"
@@ -68,17 +84,6 @@
           <span class="nav-icon"><i class="fa-solid fa-cube"></i></span>
           <span>Building DT</span>
         </a>
-
-        <a
-          class="app-nav-item nav-help"
-          href="./guide/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="nav-icon"><i class="fa-solid fa-book-open"></i></span>
-          <span>User guide</span>
-        </a>
-
       </nav>
 
       <div id="map"></div>
