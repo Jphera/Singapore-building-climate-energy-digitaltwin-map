@@ -217,6 +217,28 @@
       color: var(--nus-blue);
     }
 
+    .data-fusion-figure {
+      margin: 22px 0 8px;
+      padding: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .data-fusion-figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+    }
+
+    .data-fusion-figure figcaption {
+      margin-top: 10px;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
     .team-intro {
       margin-top: 18px;
       margin-bottom: 6px;
@@ -398,10 +420,13 @@
         <h3>Building geometry, height, type, and age</h3>
         <p>
           Building footprints and attributes were compiled through multi-source data fusion.
-          Invalid footprint records smaller than 20 m<sup>2</sup> were excluded. Building height
-          was collected where available and completed using spatial overlap transfer and
-          K-nearest-neighbor imputation for missing records. Building type and construction-age
-          information were harmonized into Singapore-specific archetypes for energy modelling.
+          Invalid footprint records smaller than 20 m<sup>2</sup> were excluded, and duplicated
+          or topologically invalid records were screened before model construction. Building
+          height was assembled from available map, public-housing, government/open-data, and
+          machine-learning sources, then completed with spatial overlap transfer,
+          neighbourhood-based interpolation, and K-nearest-neighbor gap filling under
+          cross-source consistency constraints. Building type and construction-age information
+          were harmonized into Singapore-specific archetypes for energy modelling.
         </p>
 
         <ul>
@@ -412,6 +437,11 @@
           <li>
             HDB public housing attributes, including completion year and floor information:
             <a href="https://data.gov.sg/dataset/hdb-property-information" target="_blank" rel="noopener noreferrer">HDB Property Information on data.gov.sg</a>.
+          </li>
+          <li>
+            Licensed or official building records, where available, were used as authoritative
+            anchors for footprint, type, and height attributes, while open building outlines
+            were used to improve spatial completeness.
           </li>
           <li>
             Commercial and public building benchmarking records:
@@ -425,9 +455,18 @@
           </li>
           <li>
             Machine-learning based building-height reference:
-            <a href="https://www.nature.com/articles/s41597-024-03719-w" target="_blank" rel="noopener noreferrer">UT-GLOBUS</a>.
+            <a href="https://www.nature.com/articles/s41597-024-03719-w" target="_blank" rel="noopener noreferrer">GLObal Building heights for Urban Studies (UT-GLOBUS)</a>.
           </li>
         </ul>
+
+        <figure class="data-fusion-figure">
+          <img src="assets/fig3-data-fusion.jpg" alt="Multi-source building attribute layers and spatial data fusion workflow" />
+          <figcaption>
+            Multi-source building-attribute fusion workflow used to construct the integrated
+            geometry database for UBEM simulation, including spatial joins, topology checks,
+            duplicate/outlier screening, interpolation, and gap filling.
+          </figcaption>
+        </figure>
 
         <h3>Building archetypes</h3>
         <p>
@@ -475,6 +514,24 @@
             Address, postal-code, building-name, and coordinate matching support:
             <a href="https://geoworks.sla.gov.sg/sla-products/onemap/" target="_blank" rel="noopener noreferrer">SLA OneMap</a>
             search and reverse-geocoding services.
+          </li>
+        </ul>
+
+        <h3>Urban context, population, and administrative boundaries</h3>
+        <p>
+          Population density and administrative boundaries provide contextual layers for
+          district-scale interpretation and regional filtering. They are used as supporting
+          spatial references rather than as direct inputs to the building-energy simulation.
+        </p>
+
+        <ul>
+          <li>
+            Gridded population-density context:
+            <a href="https://www.worldpop.org/" target="_blank" rel="noopener noreferrer">WorldPop</a>.
+          </li>
+          <li>
+            Singapore national boundary and map-line reference:
+            <a href="https://beta.data.gov.sg/collections/1590/datasets/d_10480c0b59e65663dfae1028ff4aa8bb/view" target="_blank" rel="noopener noreferrer">SLA National Map Line</a>.
           </li>
         </ul>
 
